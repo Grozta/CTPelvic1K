@@ -258,7 +258,8 @@ class DC_and_CE_Exclusion_loss_DeepS(nn.Module):
 
     def forward(self, net_outputs, target, sdf_heatmap):
         targets = self.down_gt(target)
-
+        # FIXME
+        targets = [targets[0]]
         ce_loss = self.ce(net_outputs, targets, sdf_heatmap)
         dc_loss = self.dc(net_outputs, targets)
         if self.aggregate == "sum":

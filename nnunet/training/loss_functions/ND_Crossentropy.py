@@ -98,14 +98,15 @@ class CrossentropyND_DeepS(torch.nn.CrossEntropyLoss):
         inps = [inp.view(-1, num_classes) for inp in inps]
 
         targets = [target.view(-1, ) for target in targets]
-
         losses = [super(CrossentropyND_DeepS, self).forward(inp, target) for inp, target in zip(inps, targets)]
         if not heat_map is None:
             heat_map = heat_map.view(-1, )
             losses[0] = losses[0] * heat_map
 
-        losses = [loss.mean() * weight for loss, weight in zip(losses, self.DSweights)]
-        return sum(losses)
+        # FIXME
+        return losses[0].data.mean()
+        # losses = [loss.mean()*weight for loss, weight in zip(losses, self.DSweights)]
+        # return sum(losses)
 
 
 # ------------------------------ sdf -----------------------------------------
