@@ -9,7 +9,7 @@ if __name__ == '__main__':
     #                                    'Task22_ipcai2021_T__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__fold0_3dcascadefullres_pred/' \
     #                                    'evaluation_mcr__2000_False.pkl'
     # eval_reslult_pkl_path = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_2d_pred/evaluation_sdf_35__2000.pkl'
-    eval_reslult_pkl_path = '/media/peng/F/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred_backup/evaluation_sdf_35__2000.pkl'
+    eval_reslult_pkl_path = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__CTPelvic1K__fold5_3dcascadefullres_pred_out/evaluation_sdf_35__2000_without4.pkl'
     print(eval_reslult_pkl_path)
     with open(eval_reslult_pkl_path, 'rb') as f:
         eval_reslult = pkl.load(f)  # dict of names and quality sub-dict
@@ -133,10 +133,10 @@ if __name__ == '__main__':
                    'weight_Acc': weight_Acc
                    }
         results_pd = pd.DataFrame(results)
-        cols=list(results_pd)
+        cols = list(results_pd)
         cols.remove('names')
-        col_mean=results_pd[cols].mean()
-        col_mean['names']='average'
-        results_pd=results_pd.append(col_mean,ignore_index=True)
-        save_csv_path = eval_reslult_pkl_path.replace('.pkl', '_{}.csv'.format(dataset))
+        col_mean = results_pd[cols].mean()
+        col_mean['names'] = 'average'
+        results_pd = results_pd.append(col_mean, ignore_index=True)
+        save_csv_path = eval_reslult_pkl_path.replace('.pkl', '_{}_without4.csv'.format(dataset))
         results_pd.to_csv(save_csv_path)

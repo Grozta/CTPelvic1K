@@ -82,7 +82,9 @@ def computeQualityMeasures_oneCases(name, pred_path, target_path_file, postproce
         class_quality = computeQualityMeasures(class_pred, class_target)
         one_case_qualities[i] = class_quality
 
+    pred[pred == 4] = 0
     pred[pred > 1] = 1
+    target[pred == 4] = 0
     target[target > 1] = 1
     assert len(np.unique(pred)) == 2
     assert len(np.unique(target)) == 2
@@ -167,12 +169,13 @@ def computeQualityMeasures_oneModel(pred_path, target_path_file, subdataset, pos
     """
     Come on!!!!!!
     """
-    pool = Pool(thread)
     func = partial(computeQualityMeasures_oneCases, pred_path=pred_path, target_path_file=target_path_file,
                    postprocessor=postprocessor, region_th=region_th, sdf_th=sdf_th)
-    results = pool.map(func, names)
-    pool.close()
-    pool.join()
+    func(names[0])
+    with Pool(thread) as pool:
+        func = partial(computeQualityMeasures_oneCases, pred_path=pred_path, target_path_file=target_path_file,
+                       postprocessor=postprocessor, region_th=region_th, sdf_th=sdf_th)
+        results = pool.map(func, names)
 
     di = OrderedDict()
     idx = 0
@@ -248,9 +251,9 @@ def computeQualityMeasures_oneModel(pred_path, target_path_file, subdataset, pos
     print('post: ', postprocessor)
 
     if postprocessor.endswith('sdf'):
-        pklsave = os.path.join(pred_path, "evaluation_{}_{}__{}.pkl".format(postprocessor, sdf_th, region_th))
+        pklsave = os.path.join(pred_path, "evaluation_{}_{}__{}_without4.pkl".format(postprocessor, sdf_th, region_th))
     else:
-        pklsave = os.path.join(pred_path, "evaluation_{}__{}.pkl".format(postprocessor, region_th))
+        pklsave = os.path.join(pred_path, "evaluation_{}__{}_without4.pkl".format(postprocessor, region_th))
     save_pkl(di, pklsave)
 
     print(pklsave, 'saved...')
@@ -260,9 +263,9 @@ if __name__ == '__main__':
     t_begin = time.time()
     # predbasePath = os.path.join(os.environ['HOME'], 'all_data/nnUNet/rawdata/ipcai2021_ALL_Test/')
     # predbasePath = '/media/peng/F/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred'
-    predbasePath = '/media/peng/F/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred_backup'
+    predbasePath = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__CTPelvic1K__fold5_3dcascadefullres_pred_out'
     # tarPath = os.path.join(os.environ['HOME'], 'all_data/nnUNet/rawdata/ipcai2021/')
-    tarPath = '/media/peng/F/CTPelvic1K/folds/fold5/test/label'
+    tarPath = '/data/test/CTPelvic1K/folds/fold5/test/label'
 
     print(predbasePath)
     for fo in [0]:

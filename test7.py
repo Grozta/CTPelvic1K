@@ -10,10 +10,10 @@ from postprocessing import newsdf_post_processor
 from utils import _sitk_Image_reader, _sitk_image_writer
 
 if __name__ == '__main__':
-    path = '/media/peng/F/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__CTPelvic1K__fold5_3dcascadefullres_pred'
-    target = '/media/peng/F/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__CTPelvic1K__fold5_3dcascadefullres_pred_out'
+    path = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred'
+    target = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred_out'
     os.makedirs(target, exist_ok=True)
-    images=glob(os.path.join(path, '*.nii.gz'))
+    images = glob(os.path.join(path, '*.nii.gz'))
     images.sort()
     for file in tqdm(images):
         _, pred, meta = _sitk_Image_reader(file)
