@@ -1,4 +1,3 @@
-
 from copy import deepcopy
 import numpy as np
 from nnunet.experiment_planning.DatasetAnalyzer import DatasetAnalyzer
@@ -18,7 +17,7 @@ from collections import OrderedDict
 
 
 class ExperimentPlanner(object):
-    def __init__(self, folder_with_cropped_data ,preprocessed_output_folder):
+    def __init__(self, folder_with_cropped_data, preprocessed_output_folder):
         self.folder_with_cropped_data = folder_with_cropped_data
         self.preprocessed_output_folder = preprocessed_output_folder
         self.list_of_cropped_npz_files = subfiles(self.folder_with_cropped_data, True, None, ".npz", True)
@@ -47,7 +46,8 @@ class ExperimentPlanner(object):
             target_spacing_of_that_axis = np.percentile(spacings_of_that_axis, 5)
             target[worst_spacing_axis] = target_spacing_of_that_axis"""
 
-        target = np.percentile(np.vstack(spacings), TARGET_SPACING_PERCENTILE, 0) # calculate mid resolution in each dim along all data
+        target = np.percentile(np.vstack(spacings), TARGET_SPACING_PERCENTILE,
+                               0)  # calculate mid resolution in each dim along all data
         return target
 
     def save_my_plans(self):
@@ -79,7 +79,6 @@ class ExperimentPlanner(object):
         for r in all_region_keys:
             all_results = [props_per_patient[k]['only_one_region'][r] for k in props_per_patient.keys()]
             only_keep_largest_connected_component[tuple(r)] = all(all_results)
-
 
         all_classes = self.dataset_properties['all_classes']
         classes = [i for i in all_classes if i > 0]
@@ -135,7 +134,7 @@ class ExperimentPlanner(object):
             input_patch_size = 1 / np.array(current_spacing)
 
             # normalize voxels per mm
-            input_patch_size /= input_patch_size.mean() ### ?????????
+            input_patch_size /= input_patch_size.mean()  ### ?????????
 
             # create an isotropic patch of size 512x512x512mm
             input_patch_size *= 1 / min(input_patch_size) * 512  # to get a starting value
@@ -145,7 +144,8 @@ class ExperimentPlanner(object):
             input_patch_size = [min(i, j) for i, j in zip(input_patch_size, new_median_shape)]
 
             network_num_pool_per_axis, pool_op_kernel_sizes, conv_kernel_sizes, new_shp, shape_must_be_divisible_by = \
-                get_pool_and_conv_props_poolLateV2(input_patch_size, FEATUREMAP_MIN_EDGE_LENGTH_BOTTLENECK, Generic_UNet.MAX_NUMPOOL_3D, current_spacing)
+                get_pool_and_conv_props_poolLateV2(input_patch_size, FEATUREMAP_MIN_EDGE_LENGTH_BOTTLENECK,
+                                                   Generic_UNet.MAX_NUMPOOL_3D, current_spacing)
 
             ref = Generic_UNet.use_this_for_batch_size_computation_3D
             here = Generic_UNet.compute_approx_vram_consumption(new_shp, network_num_pool_per_axis,
@@ -159,8 +159,8 @@ class ExperimentPlanner(object):
                 bottleneck_size_per_axis = new_shp / pool_fct_per_axis
                 shape_must_be_divisible_by = \
                     [shape_must_be_divisible_by[i] if bottleneck_size_per_axis[i] > 4 else shape_must_be_divisible_by[
-                                                                                              i] / 2
-                    for i in range(len(bottleneck_size_per_axis))]
+                                                                                               i] / 2
+                     for i in range(len(bottleneck_size_per_axis))]
                 new_shp[argsrt[0]] -= shape_must_be_divisible_by[argsrt[0]]
 
                 # we have to recompute numpool now:

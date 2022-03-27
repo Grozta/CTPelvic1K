@@ -1,14 +1,11 @@
-
-
 """
 Put your personal paths in here. This file will shortly be added to gitignore so that your personal paths will not be tracked
 """
 import os
 from batchgenerators.utilities.file_and_folder_operations import maybe_mkdir_p, join
 
-Server_Base_Path = os.path.join(os.environ['HOME'],'all_data')
-
-
+# Server_Base_Path = os.path.join(os.environ['HOME'], 'all_data')
+Server_Base_Path = '/media/peng/F/CTPelvic1K/all_data'
 # You need to set the following folders: base, preprocessing_output_dir and network_training_output_dir. See below for details.
 
 # do not modify these unless you know what you are doing
@@ -53,7 +50,8 @@ try:
     # network_training_output_dir = "/path/to/my/folder_with_results"
 
     # network_training_output_dir = os.path.join(os.environ['RESULTS_FOLDER'], my_output_identifier)
-    network_training_output_dir = os.path.join(f'{Server_Base_Path}/nnUNet/nnUNet_results_folder', my_output_identifier)
+    # network_training_output_dir = os.path.join(f'{Server_Base_Path}/nnUNet/nnUNet_results_folder', my_output_identifier)
+    network_training_output_dir = os.path.join('/media/peng/F/PyTorch_model', my_output_identifier)
     maybe_mkdir_p(network_training_output_dir)
 except KeyError:
     network_training_output_dir = None

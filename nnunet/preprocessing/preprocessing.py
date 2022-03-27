@@ -1,5 +1,7 @@
 from collections import OrderedDict
 from batchgenerators.augmentations.utils import resize_segmentation
+from tqdm import tqdm
+
 from nnunet.preprocessing.cropping import get_case_identifier_from_npz, ImageCropper
 from skimage.transform import resize
 from scipy.ndimage.interpolation import map_coordinates
@@ -42,7 +44,7 @@ def resample_patient(data, seg, original_spacing, target_spacing, order_data=3, 
     if seg is not None:
         assert len(seg.shape) == 4, "seg must be c x y z"
 
-    if data is not None:  ### ...shit code
+    if data is not None:        ### ...shit code
         shape = np.array(data[0].shape)
     else:
         shape = np.array(seg[0].shape)
@@ -118,13 +120,22 @@ def resample_data_or_seg(data, new_shape, is_seg, axis=None, order=3, do_separat
             for c in range(data.shape[0]):
                 reshaped_data = []
                 for slice_id in range(shape[axis]):
-                    if axis == 0:
-                        reshaped_data.append(resize_fn(data[c, slice_id], new_shape_2d, order, cval=cval, **kwargs))
-                    elif axis == 1:
-                        reshaped_data.append(resize_fn(data[c, :, slice_id], new_shape_2d, order, cval=cval, **kwargs))
+                    # TODO cval=0
+                    if is_seg:
+                        if axis == 0:
+                            reshaped_data.append(resize_fn(data[c, slice_id], new_shape_2d, order, **kwargs))
+                        elif axis == 1:
+                            reshaped_data.append(resize_fn(data[c, :, slice_id], new_shape_2d, order, **kwargs))
+                        else:
+                            reshaped_data.append(resize_fn(data[c, :, :, slice_id], new_shape_2d, order, **kwargs))
                     else:
-                        reshaped_data.append(resize_fn(data[c, :, :, slice_id], new_shape_2d, order, cval=cval,
-                                                       **kwargs))
+                        if axis == 0:
+                            reshaped_data.append(resize_fn(data[c, slice_id], new_shape_2d, order, cval=cval, **kwargs))
+                        elif axis == 1:
+                            reshaped_data.append(resize_fn(data[c, :, slice_id], new_shape_2d, order, cval=cval, **kwargs))
+                        else:
+                            reshaped_data.append(resize_fn(data[c, :, :, slice_id], new_shape_2d, order, cval=cval,
+                                                           **kwargs))
                 reshaped_data = np.stack(reshaped_data, axis)
                 if shape[axis] != new_shape[axis]:
 
@@ -160,8 +171,13 @@ def resample_data_or_seg(data, new_shape, is_seg, axis=None, order=3, do_separat
             reshaped_final_data = np.vstack(reshaped_final_data)
         else:
             reshaped = []
-            for c in range(data.shape[0]):
-                reshaped.append(resize_fn(data[c], new_shape, order, cval=cval, **kwargs)[None])
+            # TODO cval=0
+            if is_seg:
+                for c in range(data.shape[0]):
+                    reshaped.append(resize_fn(data[c], new_shape, order, **kwargs)[None])
+            else:
+                for c in range(data.shape[0]):
+                    reshaped.append(resize_fn(data[c], new_shape, order, cval=cval, **kwargs)[None])
             reshaped_final_data = np.vstack(reshaped)
         return reshaped_final_data.astype(dtype_data)
     else:
@@ -170,8 +186,7 @@ def resample_data_or_seg(data, new_shape, is_seg, axis=None, order=3, do_separat
 
 
 class GenericPreprocessor(object):
-    def __init__(self, normalization_scheme_per_modality, use_nonzero_mask, transpose_forward: (tuple, list),
-                 intensityproperties=None):
+    def __init__(self, normalization_scheme_per_modality, use_nonzero_mask, transpose_forward: (tuple, list), intensityproperties=None):
         """
 
         :param normalization_scheme_per_modality: dict {0:'nonCT'}
@@ -292,9 +307,9 @@ class GenericPreprocessor(object):
 
         all_data = np.vstack((data, seg)).astype(np.float32)
 
+
         print("saving: ", os.path.join(output_folder_stage, "%s.npz" % case_identifier))
-        np.savez_compressed(os.path.join(output_folder_stage, "%s.npz" % case_identifier),
-                            data=all_data.astype(np.float32))
+        np.savez_compressed(os.path.join(output_folder_stage, "%s.npz" % case_identifier), data=all_data.astype(np.float32))
         with open(os.path.join(output_folder_stage, "%s.pkl" % case_identifier), 'wb') as f:
             pickle.dump(properties, f)
 
@@ -315,7 +330,7 @@ class GenericPreprocessor(object):
         list_of_cropped_npz_files = subfiles(input_folder_with_cropped_npz, True, None, ".npz", True)
         maybe_mkdir_p(output_folder)
         num_stages = len(target_spacings)
-        if not isinstance(num_threads, (list, tuple, np.ndarray)):  ### ??? should be a list of tuple or list here...
+        if not isinstance(num_threads, (list, tuple, np.ndarray)):   ### ??? should be a list of tuple or list here...
             num_threads = [num_threads] * num_stages
 
         assert len(num_threads) == num_stages
@@ -329,18 +344,22 @@ class GenericPreprocessor(object):
                 case_identifier = get_case_identifier_from_npz(case)
                 args = spacing, case_identifier, output_folder_stage, input_folder_with_cropped_npz, force_separate_z
                 all_args.append(args)
-            p = Pool(num_threads[i])
-            p.map(self._run_star, all_args)
-            p.close()
-            p.join()
+
+            # TODO 线程
+            for args in tqdm(all_args):
+                self._run_star(args)
+            # with Pool(num_threads[i]) as p:
+            #     p.map(self._run_star, all_args)
+            # p = Pool(num_threads[i])
+            # p.map(self._run_star, all_args)
+            # p.close()
+            # p.join()
 
 
 class PreprocessorFor2D(GenericPreprocessor):
-    def __init__(self, normalization_scheme_per_modality, use_nonzero_mask, transpose_forward: (tuple, list),
-                 intensityproperties=None):
+    def __init__(self, normalization_scheme_per_modality, use_nonzero_mask, transpose_forward: (tuple, list), intensityproperties=None):
 
-        super(PreprocessorFor2D, self).__init__(normalization_scheme_per_modality, use_nonzero_mask, transpose_forward,
-                                                intensityproperties)
+        super(PreprocessorFor2D, self).__init__(normalization_scheme_per_modality, use_nonzero_mask, transpose_forward, intensityproperties)
 
     def run(self, target_spacings, input_folder_with_cropped_npz, output_folder, data_identifier,
             num_threads=8, force_separate_z=None):
@@ -360,10 +379,12 @@ class PreprocessorFor2D(GenericPreprocessor):
                 case_identifier = get_case_identifier_from_npz(case)
                 args = spacing, case_identifier, output_folder_stage, input_folder_with_cropped_npz, force_separate_z
                 all_args.append(args)
-        p = Pool(num_threads)
-        p.map(self._run_star, all_args)
-        p.close()
-        p.join()
+        for args in tqdm(all_args):
+            self._run_star(args)
+        # p = Pool(num_threads)
+        # p.map(self._run_star, all_args)
+        # p.close()
+        # p.join()
 
     def resample_and_normalize(self, data, target_spacing, properties, seg=None, force_separate_z=None):
         original_spacing_transposed = np.array(properties["original_spacing"])[self.transpose_forward]

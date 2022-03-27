@@ -1,4 +1,6 @@
 import matplotlib
+
+from nnunet.network_architecture.HDC_Net import HDC_Net
 from nnunet.training.network_training.network_trainer import NetworkTrainer
 from nnunet.network_architecture.neural_network import SegmentationNetwork
 from batchgenerators.utilities.file_and_folder_operations import *
@@ -88,7 +90,7 @@ class nnUNetTrainer(NetworkTrainer):
         super(nnUNetTrainer, self).__init__(deterministic, fp16)
         self.unpack_data = unpack_data
         self.init_args = (
-        plans_file, fold, output_folder, dataset_directory, batch_dice, stage, unpack_data, deterministic, fp16)
+            plans_file, fold, output_folder, dataset_directory, batch_dice, stage, unpack_data, deterministic, fp16)
         self.stage = stage
         self.experiment_name = self.__class__.__name__
         self.plans_file = plans_file
@@ -248,7 +250,7 @@ class nnUNetTrainer(NetworkTrainer):
         self.data_aug_params['move_last_few_data_chanels_to_data'] = False
         self.data_aug_params['last_few_data_channels'] = [-1]
 
-    def initialize(self, training=True, force_load_plans=False):
+    def initialize(self, training=True, force_load_plans=False, use_hdc=False):
         """
         For prediction of test cases just set training=False,
         this will prevent loading of training data and
@@ -294,10 +296,10 @@ class nnUNetTrainer(NetworkTrainer):
         else:
             pass
 
-        self.initialize_network_optimizer_and_scheduler()
+        self.initialize_network_optimizer_and_scheduler(use_hdc=use_hdc)
         self.was_initialized = True
 
-    def initialize_network_optimizer_and_scheduler(self):
+    def initialize_network_optimizer_and_scheduler(self, use_hdc=False):
         """
         This is specific to the U-Net and must be adapted for other network architectures
         :return:
@@ -318,37 +320,44 @@ class nnUNetTrainer(NetworkTrainer):
         net_nonlin = nn.LeakyReLU
         net_nonlin_kwargs = {'negative_slope': 1e-2, 'inplace': True}
 
-        if self.deep_supervision:
-            self.network = Generic_UNet(self.num_input_channels,
-                                        self.base_num_features,
-                                        self.num_classes,
-                                        net_numpool,
-                                        2, 2, conv_op,
-                                        norm_op, norm_op_kwargs,
-                                        dropout_op, dropout_op_kwargs,
-                                        net_nonlin, net_nonlin_kwargs,
-                                        True, False, lambda x: x,
-                                        # False, False, lambda x: x,   ### deep supervision
-                                        InitWeights_He(1e-2),
-                                        self.net_num_pool_op_kernel_sizes,
-                                        self.net_conv_kernel_sizes,
-                                        False, True, True)
+        if use_hdc:
+            self.network = HDC_Net(1, 5, num_filters=8)
+            self.network.cuda()
+            self.network.conv_op = conv_op
+            self.network.num_classes = self.num_classes
+            self.network.input_channels_pbl = self.num_input_channels
         else:
-            self.network = Generic_UNet(self.num_input_channels,
-                                        self.base_num_features,
-                                        self.num_classes,
-                                        net_numpool,
-                                        2, 2, conv_op,
-                                        norm_op, norm_op_kwargs,
-                                        dropout_op, dropout_op_kwargs,
-                                        net_nonlin, net_nonlin_kwargs,
-                                        # True, False, lambda x: x,
-                                        False, False, lambda x: x,
-                                        InitWeights_He(1e-2),
-                                        self.net_num_pool_op_kernel_sizes,
-                                        self.net_conv_kernel_sizes,
-                                        False, True,
-                                        True)
+            if self.deep_supervision:
+                self.network = Generic_UNet(self.num_input_channels,
+                                            self.base_num_features,
+                                            self.num_classes,
+                                            net_numpool,
+                                            2, 2, conv_op,
+                                            norm_op, norm_op_kwargs,
+                                            dropout_op, dropout_op_kwargs,
+                                            net_nonlin, net_nonlin_kwargs,
+                                            True, False, lambda x: x,
+                                            # False, False, lambda x: x,   ### deep supervision
+                                            InitWeights_He(1e-2),
+                                            self.net_num_pool_op_kernel_sizes,
+                                            self.net_conv_kernel_sizes,
+                                            False, True, True)
+            else:
+                self.network = Generic_UNet(self.num_input_channels,
+                                            self.base_num_features,
+                                            self.num_classes,
+                                            net_numpool,
+                                            2, 2, conv_op,
+                                            norm_op, norm_op_kwargs,
+                                            dropout_op, dropout_op_kwargs,
+                                            net_nonlin, net_nonlin_kwargs,
+                                            # True, False, lambda x: x,
+                                            False, False, lambda x: x,
+                                            InitWeights_He(1e-2),
+                                            self.net_num_pool_op_kernel_sizes,
+                                            self.net_conv_kernel_sizes,
+                                            False, True,
+                                            True)
 
         self.optimizer = torch.optim.Adam(self.network.parameters(),
                                           self.initial_lr,
@@ -358,8 +367,9 @@ class nnUNetTrainer(NetworkTrainer):
                                                            patience=self.lr_scheduler_patience,
                                                            verbose=True, threshold=self.lr_scheduler_eps,
                                                            threshold_mode="abs")
-        self.network.cuda()
-        self.network.inference_apply_nonlin = softmax_helper
+        if not use_hdc:
+            self.network.cuda()
+            self.network.inference_apply_nonlin = softmax_helper
 
     def load_plans_file(self):
         """
@@ -595,7 +605,8 @@ class nnUNetTrainer(NetworkTrainer):
         :param use_temporal:
         :return:
         """
-        assert isinstance(self.network, (SegmentationNetwork, nn.DataParallel))
+        # 兼容hdc-net
+        assert isinstance(self.network, (SegmentationNetwork, nn.DataParallel, HDC_Net))
         return self.network.predict_3D(data, do_mirroring, num_repeats, use_train_mode, batch_size, mirror_axes,
                                        tiled, tile_in_z, step, min_size, use_gaussian=use_gaussian,
                                        pad_border_mode=self.inference_pad_border_mode,

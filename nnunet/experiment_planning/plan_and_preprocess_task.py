@@ -120,16 +120,21 @@ def plan_and_preprocess(task_string, processes_lowres=8, processes_fullres=3, no
 
     shutil.copy(join(cropped_out_dir, "dataset_properties.pkl"), preprocessing_output_dir_this_task_train)
     shutil.copy(join(splitted_4d_output_dir, task_string, "dataset.json"), preprocessing_output_dir_this_task_train)
-
+    print('start ExperimentPlanner')
     exp_planner = ExperimentPlanner(cropped_out_dir, preprocessing_output_dir_this_task_train)
     exp_planner.plan_experiment()
     if not no_preprocessing:
+        print('start run_preprocessing')
         exp_planner.run_preprocessing((processes_lowres, processes_fullres))
+    print('end ExperimentPlanner')
 
+    print('start ExperimentPlanner2D')
     exp_planner = ExperimentPlanner2D(cropped_out_dir, preprocessing_output_dir_this_task_train)
     exp_planner.plan_experiment()
     if not no_preprocessing:
+        print('start run_preprocessing')
         exp_planner.run_preprocessing(processes_fullres)
+    print('end ExperimentPlanner2D')
 
     if not no_preprocessing:
         p = Pool(processes_lowres)
@@ -208,15 +213,21 @@ if __name__ == "__main__":
         use_splitted = True
     else:
         raise ValueError("only 0 or 1 allowed for use_splitted")
-
+    print('start spliting')
     # for current task: Task11_CTPelvic1K
     if not use_splitted or not isdir(
             join(splitted_4d_output_dir, task)):  # ensure is there splitted_folder have been existed or whether use it.
         print("splitting task ", task)
         split_4d(task)  # split existing 4D image to some 3D images
-
+    print('end spliting')
+    print('start cropping')
     crop(task, override=override,
          num_threads=processes_lowres)  # got cropped data and seg(with -1) in one array (m+1, d, h, w); and pkl with properties
+    print('end cropping')
+    print('start analyzing')
     analyze_dataset(task, override, collect_intensityproperties=True,
                     num_processes=processes_lowres)  # got two pkl file...
+    print('end analyzing')
+    print('start plan_and_preprocess')
     plan_and_preprocess(task, processes_lowres, processes_fullres, no_preprocessing)
+    print('end plan_and_preprocess')

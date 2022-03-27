@@ -134,6 +134,9 @@ if __name__ == '__main__':
     SDF post processor
     
     """
+    path = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_2d_pred/dataset5_1411226_Image.nii.gz'
+    _, pred, _ = _sitk_Image_reader(path)
+    newsdf_post_processor(pred)
 
 
     def func(name, path, savepath, post='sdf'):

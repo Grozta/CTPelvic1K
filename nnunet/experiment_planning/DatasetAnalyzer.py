@@ -1,6 +1,10 @@
+import time
 
 from batchgenerators.utilities.file_and_folder_operations import *
 from multiprocessing import Pool
+
+from tqdm import tqdm
+
 from nnunet.paths import splitted_4d_output_dir, cropped_output_dir
 import numpy as np
 import pickle
@@ -10,7 +14,7 @@ from collections import OrderedDict
 
 
 class DatasetAnalyzer(object):
-    def __init__(self, folder_with_cropped_data, overwrite=True ,num_processes=8):
+    def __init__(self, folder_with_cropped_data, overwrite=True, num_processes=8):
         """
         :param folder_with_cropped_data:
         :param overwrite: If True then precomputed values will not be used and instead recomputed from the data.
@@ -22,9 +26,10 @@ class DatasetAnalyzer(object):
         self.folder_with_cropped_data = folder_with_cropped_data
         self.sizes = self.spacings = None
         self.patient_identifiers = get_patient_identifiers_from_cropped_files \
-            (self.folder_with_cropped_data) ###  npz file names
+            (self.folder_with_cropped_data)  ###  npz file names
         assert isfile \
-            (join(self.folder_with_cropped_data, "dataset.json")), "dataset.json needs to be in folder_with_cropped_data"
+            (join(self.folder_with_cropped_data,
+                  "dataset.json")), "dataset.json needs to be in folder_with_cropped_data"
 
         self.props_per_case_file = join(self.folder_with_cropped_data, "props_per_case.pkl")
         self.intensityproperties_file = join(self.folder_with_cropped_data, "intensityproperties.pkl")
@@ -70,7 +75,7 @@ class DatasetAnalyzer(object):
         4) check if all in one region
         :return:
         """
-        patient_identifier, all_classes = args ### all_classes is an array
+        patient_identifier, all_classes = args  ### all_classes is an array
         seg = np.load(join(self.folder_with_cropped_data, patient_identifier) + ".npz")['data'][-1]
         pkl = load_pickle(join(self.folder_with_cropped_data, patient_identifier) + ".pkl")
         vol_per_voxel = np.prod(pkl['itk_spacing'])
@@ -82,14 +87,14 @@ class DatasetAnalyzer(object):
         regions = list()
         regions.append(list(all_classes))
         for c in all_classes:
-            regions.append((c, ))
+            regions.append((c,))
 
         all_in_one_region = self._check_if_all_in_one_region \
-            ((seg, regions)) # check are these classes or class itself in a connected region
+            ((seg, regions))  # check are these classes or class itself in a connected region
 
         # 2 & 3) region sizes
         volume_per_class, region_sizes = self._collect_class_and_region_sizes \
-            ((seg, all_classes, vol_per_voxel)) # volume of each class; volume of each subregion of each class
+            ((seg, all_classes, vol_per_voxel))  # volume of each class; volume of each subregion of each class
 
         return unique_classes, all_in_one_region, volume_per_class, region_sizes
 
@@ -98,20 +103,29 @@ class DatasetAnalyzer(object):
         return datasetjson['labels']
 
     def analyse_segmentations(self):
-        class_dct = self.get_classes() # dict of meaning of different class(0,1,2)
-        all_classes = np.array([int(i) for i in class_dct.keys()]) # array [0,1,2]
+        class_dct = self.get_classes()  # dict of meaning of different class(0,1,2)
+        all_classes = np.array([int(i) for i in class_dct.keys()])  # array [0,1,2]
         all_classes = all_classes[all_classes > 0]  # remove background  ### [1,2]
 
         if self.overwrite or not isfile(self.props_per_case_file):
-            p = Pool(self.num_processes)
-            res = p.map(self._load_seg_analyze_classes, zip(self.patient_identifiers, [all_classes] * len
-                (self.patient_identifiers))) # list of list of each patient's classes' properties
-            p.close()
-            p.join()
+            res = []
+            # for args in tqdm(zip(self.patient_identifiers, [all_classes] * len(self.patient_identifiers)),
+            #                  total=len(self.patient_identifiers)):
+            #     res.append(self._load_seg_analyze_classes(args))
+            with Pool(self.num_processes) as p:
+                res = list(tqdm(p.imap(self._load_seg_analyze_classes,
+                                       zip(self.patient_identifiers, [all_classes] * len(self.patient_identifiers))),
+                                total=len(self.patient_identifiers)))
+
+            # p = Pool(self.num_processes)
+            # res = p.map(self._load_seg_analyze_classes, zip(self.patient_identifiers, [all_classes] * len(
+            #     self.patient_identifiers)))  # list of list of each patient's classes' properties
+            # p.close()
+            # p.join()
 
             props_per_patient = OrderedDict()
-            for p, (unique_classes, all_in_one_region, voxels_per_class, region_volume_per_class) in zip \
-                    (self.patient_identifiers, res):
+            for p, (unique_classes, all_in_one_region, voxels_per_class, region_volume_per_class) in zip(
+                    self.patient_identifiers, res):
                 props = dict()
                 props['has_classes'] = unique_classes
                 props['only_one_region'] = all_in_one_region
@@ -125,8 +139,8 @@ class DatasetAnalyzer(object):
         return class_dct, props_per_patient
 
     def get_sizes_and_spacings_after_cropping(self):
-        case_identifiers = get_patient_identifiers_from_cropped_files \
-            (self.folder_with_cropped_data) ### ...... ??? do this operation two times???
+        case_identifiers = get_patient_identifiers_from_cropped_files(
+            self.folder_with_cropped_data)  ### ...... ??? do this operation two times???
         sizes = []
         spacings = []
         for c in case_identifiers:
@@ -154,10 +168,11 @@ class DatasetAnalyzer(object):
 
     def _get_voxels_in_foreground(self, args):
         patient_identifier, modality_id = args
+        print(patient_identifier)
         all_data = np.load(join(self.folder_with_cropped_data, patient_identifier) + ".npz")['data']
         modality = all_data[modality_id]
         mask = all_data[-1] > 0
-        voxels = list(modality[mask][::10]) # no need to take every voxel ### select voxel from modality 3D array
+        voxels = list(modality[mask][::10])  # no need to take every voxel ### select voxel from modality 3D array
         return voxels
 
     @staticmethod
@@ -175,43 +190,45 @@ class DatasetAnalyzer(object):
 
     def collect_intensity_properties(self, num_modalities):
         if self.overwrite or not isfile(self.intensityproperties_file):
-            p = Pool(self.num_processes)
+            with Pool(self.num_processes) as p:
+                # p = Pool(self.num_processes)
 
-            results = OrderedDict()
-            for mod_id in range(num_modalities):
-                results[mod_id] = OrderedDict()
-                v = p.map(self._get_voxels_in_foreground, zip(self.patient_identifiers, [mod_id] * len
-                    (self.patient_identifiers))) # voxel value sampled from foreground data target
+                results = OrderedDict()
+                for mod_id in range(num_modalities):
+                    print(num_modalities)
+                    results[mod_id] = OrderedDict()
+                    v = p.map(self._get_voxels_in_foreground, zip(self.patient_identifiers, [mod_id] * len(
+                        self.patient_identifiers)))  # voxel value sampled from foreground data target
 
-                w = []
-                for iv in v:
-                    w += iv
+                    w = []
+                    for iv in v:
+                        w += iv
 
-                median, mean, sd, mn, mx, percentile_99_5, percentile_00_5 = self._compute_stats(w)
+                    median, mean, sd, mn, mx, percentile_99_5, percentile_00_5 = self._compute_stats(w)
 
-                local_props = p.map(self._compute_stats, v)
-                props_per_case = OrderedDict()
-                for i, pat in enumerate(self.patient_identifiers):
-                    props_per_case[pat] = OrderedDict()
-                    props_per_case[pat]['median'] = local_props[i][0]
-                    props_per_case[pat]['mean'] = local_props[i][1]
-                    props_per_case[pat]['sd'] = local_props[i][2]
-                    props_per_case[pat]['mn'] = local_props[i][3]
-                    props_per_case[pat]['mx'] = local_props[i][4]
-                    props_per_case[pat]['percentile_99_5'] = local_props[i][5]
-                    props_per_case[pat]['percentile_00_5'] = local_props[i][6]
+                    local_props = p.map(self._compute_stats, v)
+                    props_per_case = OrderedDict()
+                    for i, pat in enumerate(self.patient_identifiers):
+                        props_per_case[pat] = OrderedDict()
+                        props_per_case[pat]['median'] = local_props[i][0]
+                        props_per_case[pat]['mean'] = local_props[i][1]
+                        props_per_case[pat]['sd'] = local_props[i][2]
+                        props_per_case[pat]['mn'] = local_props[i][3]
+                        props_per_case[pat]['mx'] = local_props[i][4]
+                        props_per_case[pat]['percentile_99_5'] = local_props[i][5]
+                        props_per_case[pat]['percentile_00_5'] = local_props[i][6]
 
-                results[mod_id]['local_props'] = props_per_case
-                results[mod_id]['median'] = median
-                results[mod_id]['mean'] = mean
-                results[mod_id]['sd'] = sd
-                results[mod_id]['mn'] = mn
-                results[mod_id]['mx'] = mx
-                results[mod_id]['percentile_99_5'] = percentile_99_5
-                results[mod_id]['percentile_00_5'] = percentile_00_5
+                    results[mod_id]['local_props'] = props_per_case
+                    results[mod_id]['median'] = median
+                    results[mod_id]['mean'] = mean
+                    results[mod_id]['sd'] = sd
+                    results[mod_id]['mn'] = mn
+                    results[mod_id]['mx'] = mx
+                    results[mod_id]['percentile_99_5'] = percentile_99_5
+                    results[mod_id]['percentile_00_5'] = percentile_00_5
 
-            p.close()
-            p.join()
+            # p.close()
+            # p.join()
             save_pickle(results, self.intensityproperties_file)
         else:
             results = load_pickle(self.intensityproperties_file)
@@ -224,29 +241,32 @@ class DatasetAnalyzer(object):
         # get all classes and what classes are in what patients
         # class min size
         # region size per class
-        class_dct, segmentation_props_per_patient = self.analyse_segmentations() # dict of classes meaning; dict of dict of dict...properties
+        print('start analyse_segmentations')
+        class_dct, segmentation_props_per_patient = self.analyse_segmentations()  # dict of classes meaning; dict of dict of dict...properties
         all_classes = np.array([int(i) for i in class_dct.keys()])
         all_classes = all_classes[all_classes > 0]
+        print('end analyse_segmentations')
 
         # modalities
         modalities = self.get_modalities()
 
         # collect intensity information
+        print('start collect intensity information')
         if collect_intensityproperties:
-            intensityproperties = self.collect_intensity_properties \
-                (len(modalities)) # statistic of the whole dataset and statistic of each case in dataset
+            intensityproperties = self.collect_intensity_properties(
+                len(modalities))  # statistic of the whole dataset and statistic of each case in dataset
         else:
             intensityproperties = None
-
+        print('end collect intensity information')
         # size reduction by cropping
-        size_reductions = self.get_size_reduction_by_cropping() # size ratio between cropped data and original data
+        size_reductions = self.get_size_reduction_by_cropping()  # size ratio between cropped data and original data
 
         dataset_properties = dict()
         dataset_properties['all_sizes'] = sizes
         dataset_properties['all_spacings'] = spacings
         dataset_properties['segmentation_props_per_patient'] = segmentation_props_per_patient
         dataset_properties['class_dct'] = class_dct  # {int: class name}
-        dataset_properties['all_classes'] = all_classes ### >0
+        dataset_properties['all_classes'] = all_classes  ### >0
         dataset_properties['modalities'] = modalities  # {idx: modality name}
         dataset_properties['intensityproperties'] = intensityproperties
         dataset_properties['size_reductions'] = size_reductions  # {patient_id: size_reduction}

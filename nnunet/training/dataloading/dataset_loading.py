@@ -113,11 +113,13 @@ def unpack_dataset(folder, threads=48, key="data"):
     :param key:
     :return:
     """
-    p = Pool(threads)
-    npz_files = subfiles(folder, True, None, ".npz", True)
-    p.map(convert_to_npy, zip(npz_files, [key] * len(npz_files)))
-    p.close()
-    p.join()
+    with Pool(threads) as p:
+        npz_files = subfiles(folder, True, None, ".npz", True)
+        list(tqdm(p.imap(convert_to_npy, zip(npz_files, [key] * len(npz_files))), total=len(npz_files)))
+    # p = Pool(threads)
+    # p.map(convert_to_npy, zip(npz_files, [key]*len(npz_files)))
+    # p.close()
+    # p.join()
 
 
 def pack_dataset(folder, threads=8, key="data"):
@@ -194,9 +196,9 @@ def crop_2D_image_force_fg(img, crop_size, force_class=None):
                                        selected_center_voxel[i])
 
     result = img[:, (selected_center_voxel[0] - crop_size[0] // 2):(
-                selected_center_voxel[0] + crop_size[0] // 2 + crop_size[0] % 2),
+            selected_center_voxel[0] + crop_size[0] // 2 + crop_size[0] % 2),
              (selected_center_voxel[1] - crop_size[1] // 2):(
-                         selected_center_voxel[1] + crop_size[1] // 2 + crop_size[1] % 2)]
+                     selected_center_voxel[1] + crop_size[1] // 2 + crop_size[1] % 2)]
     return result
 
 
@@ -423,7 +425,8 @@ class DataLoader2D(SlimDataLoaderBase):
         self.final_patch_size = final_patch_size
         if transpose is not None:
             assert isinstance(transpose, (
-            list, tuple)), "Transpose must be either None or be a tuple/list representing the new axis order (3 ints)"
+                list,
+                tuple)), "Transpose must be either None or be a tuple/list representing the new axis order (3 ints)"
         self.transpose = transpose
         self.need_to_pad = np.array(patch_size) - np.array(final_patch_size)
 
@@ -474,7 +477,8 @@ class DataLoader2D(SlimDataLoaderBase):
                           :-4] + ".npy"):  # "data_file", "properties", ["seg_from_prev_stage_file"]
                 case_all_data = np.load(self._data[i]['data_file'][:-4] + ".npz")['data']
             else:
-                case_all_data = np.load(self._data[i]['data_file'][:-4] + ".npy", self.memmap_mode)
+                # case_all_data = np.load(self._data[i]['data_file'][:-4] + ".npy", self.memmap_mode) # r
+                case_all_data = np.load(self._data[i]['data_file'][:-4] + ".npy", 'r+')
 
             if len(case_all_data.shape) == 3:
                 case_all_data = case_all_data[:, None]
@@ -500,7 +504,12 @@ class DataLoader2D(SlimDataLoaderBase):
                     valid_slices = classes_in_slice_per_axis[leading_axis][selected_class]
                 else:
                     valid_slices = np.where(
-                        np.sum(case_all_data[-1] == selected_class, axis=[i for i in range(3) if i != leading_axis]))[0]
+                        np.sum(case_all_data[-1] == selected_class,
+                               axis=tuple(i for i in range(3) if i != leading_axis))
+                    )[0]
+                    # valid_slices = np.where(
+                    #     np.sum(case_all_data[-1] == selected_class, axis=[i for i in range(3) if i != leading_axis])
+                    # )[0]
                 if len(valid_slices) != 0:
                     random_slice = np.random.choice(valid_slices)
                 else:

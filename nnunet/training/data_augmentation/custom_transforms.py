@@ -4,7 +4,6 @@ from batchgenerators.transforms.abstract_transforms import AbstractTransform
 
 # from batchgenerators.transforms import AbstractTransform
 
-
 class RemoveKeyTransform(AbstractTransform):
     def __init__(self, key_to_remove):
         self.key_to_remove = key_to_remove

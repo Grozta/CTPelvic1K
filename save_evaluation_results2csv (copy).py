@@ -9,7 +9,7 @@ if __name__ == '__main__':
     #                                    'Task22_ipcai2021_T__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__fold0_3dcascadefullres_pred/' \
     #                                    'evaluation_mcr__2000_False.pkl'
     # eval_reslult_pkl_path = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_2d_pred/evaluation_sdf_35__2000.pkl'
-    eval_reslult_pkl_path = '/media/peng/F/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred_backup_out/evaluation_sdf_35__2000.pkl'
+    eval_reslult_pkl_path = '/media/peng/F/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred_backup/evaluation_sdf_35__2000.pkl'
     print(eval_reslult_pkl_path)
     with open(eval_reslult_pkl_path, 'rb') as f:
         eval_reslult = pkl.load(f)  # dict of names and quality sub-dict
@@ -26,9 +26,9 @@ if __name__ == '__main__':
         bone3_Hausdorff = []
         bone3_Dice = []
         bone3_Acc = []
-        bone4_Hausdorff = []
-        bone4_Dice = []
-        bone4_Acc = []
+        # bone4_Hausdorff = []
+        # bone4_Dice = []
+        # bone4_Acc = []
         whole_Hausdorff = []
         whole_Dice = []
         whole_Acc = []
@@ -51,9 +51,9 @@ if __name__ == '__main__':
             bone3_Hausdorff.append(quality[3]['Hausdorff'])
             bone3_Dice.append(quality[3]['dice'])
             bone3_Acc.append(quality[3]['acc'])
-            bone4_Hausdorff.append(quality[4]['Hausdorff'])
-            bone4_Dice.append(quality[4]['dice'])
-            bone4_Acc.append(quality[4]['acc'])
+            # bone4_Hausdorff.append(quality[4]['Hausdorff'])
+            # bone4_Dice.append(quality[4]['dice'])
+            # bone4_Acc.append(quality[4]['acc'])
             whole_Hausdorff.append(quality['whole']['Hausdorff'])
             whole_Dice.append(quality['whole']['dice'])
             whole_Acc.append(quality['whole']['acc'])
@@ -74,9 +74,9 @@ if __name__ == '__main__':
             'bone3_Dice:', np.array(bone3_Dice).mean(), '\n',
             'bone3_Hausdorff:', np.array(bone3_Hausdorff).mean(), '\n',
             'bone3_Acc:', np.array(bone3_Acc).mean(), '\n',
-            'bone4_Dice:', np.array(bone4_Dice).mean(), '\n',
-            'bone4_Hausdorff:', np.array(bone4_Hausdorff).mean(), '\n',
-            'bone4_Acc:', np.array(bone4_Acc).mean(), '\n',
+            # 'bone4_Dice:', np.array(bone4_Dice).mean(), '\n',
+            # 'bone4_Hausdorff:', np.array(bone4_Hausdorff).mean(), '\n',
+            # 'bone4_Acc:', np.array(bone4_Acc).mean(), '\n',
             'whole_Dice:', np.array(whole_Dice).mean(), '\n',
             'whole_Hausdorff:', np.array(whole_Hausdorff).mean(), '\n',
             'whole_Acc:', np.array(whole_Acc).mean(), '\n',
@@ -96,9 +96,9 @@ if __name__ == '__main__':
         assert len(names) == len(bone3_Dice)
         assert len(names) == len(bone3_Hausdorff)
         assert len(names) == len(bone3_Acc)
-        assert len(names) == len(bone4_Dice)
-        assert len(names) == len(bone4_Hausdorff)
-        assert len(names) == len(bone4_Acc)
+        # assert len(names) == len(bone4_Dice)
+        # assert len(names) == len(bone4_Hausdorff)
+        # assert len(names) == len(bone4_Acc)
         assert len(names) == len(whole_Dice)
         assert len(names) == len(whole_Hausdorff)
         assert len(names) == len(whole_Acc)
@@ -119,9 +119,9 @@ if __name__ == '__main__':
                    'bone3_Dice': bone3_Dice,
                    'bone3_Hausdorff': bone3_Hausdorff,
                    'bone3_Acc': bone3_Acc,
-                   'bone4_Dice': bone4_Dice,
-                   'bone4_Hausdorff': bone4_Hausdorff,
-                   'bone4_Acc': bone4_Acc,
+                   # 'bone4_Dice': bone4_Dice,
+                   # 'bone4_Hausdorff': bone4_Hausdorff,
+                   # 'bone4_Acc': bone4_Acc,
                    'whole_Dice': whole_Dice,
                    'whole_Hausdorff': whole_Hausdorff,
                    'whole_Acc': whole_Acc,
@@ -133,10 +133,10 @@ if __name__ == '__main__':
                    'weight_Acc': weight_Acc
                    }
         results_pd = pd.DataFrame(results)
-        cols = list(results_pd)
+        cols=list(results_pd)
         cols.remove('names')
-        col_mean = results_pd[cols].mean()
-        col_mean['names'] = 'average'
-        results_pd = results_pd.append(col_mean, ignore_index=True)
+        col_mean=results_pd[cols].mean()
+        col_mean['names']='average'
+        results_pd=results_pd.append(col_mean,ignore_index=True)
         save_csv_path = eval_reslult_pkl_path.replace('.pkl', '_{}.csv'.format(dataset))
         results_pd.to_csv(save_csv_path)

@@ -6,6 +6,10 @@ import numpy as np
 from nnunet.network_architecture.initialization import InitWeights_He
 from nnunet.network_architecture.neural_network import SegmentationNetwork
 import torch.nn.functional
+from nnunet.network_architecture.HDC_Net import HDC_Net
+
+HDC_model = HDC_Net(1, 5, num_filters=8)
+HDC_model = torch.nn.DataParallel(HDC_model).cuda()
 
 
 class ConvDropoutNormNonlin(nn.Module):
@@ -382,6 +386,7 @@ class Generic_UNet(SegmentationNetwork):
     def forward(self, x):
         skips = []
         seg_outputs = []
+        # seg_outputs.append(HDC_model(x))
         for d in range(len(self.conv_blocks_context) - 1):
             x = self.conv_blocks_context[d](x)
             skips.append(x)
@@ -403,6 +408,7 @@ class Generic_UNet(SegmentationNetwork):
                 [seg_outputs[-1]] + [i(j) for i, j in zip(list(self.upscale_logits_ops)[::-1], seg_outputs[:-1][::-1])])
         else:
             return seg_outputs[-1]
+        # return tuple([seg_outputs[-1]])
 
     @staticmethod
     def compute_approx_vram_consumption(patch_size, num_pool_per_axis, base_num_features, max_num_features,

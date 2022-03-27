@@ -2,6 +2,7 @@ from _warnings import warn
 import matplotlib
 from batchgenerators.utilities.file_and_folder_operations import *
 from sklearn.model_selection import KFold
+from tqdm import tqdm
 
 matplotlib.use("agg")
 from time import time, sleep
@@ -316,7 +317,7 @@ class NetworkTrainer(object):
 
             # train one epoch
             self.network.train()
-            for b in range(self.num_batches_per_epoch):
+            for b in tqdm(range(self.num_batches_per_epoch)):
                 l = self.run_iteration(self.tr_gen, True)
                 train_losses_epoch.append(l)
 
@@ -328,7 +329,7 @@ class NetworkTrainer(object):
                 # validation with train=False
                 self.network.eval()
                 val_losses = []
-                for b in range(self.num_val_batches_per_epoch):
+                for b in tqdm(range(self.num_val_batches_per_epoch)):
                     l = self.run_iteration(self.val_gen, False, True)
                     val_losses.append(l)
                 self.all_val_losses.append(np.mean(val_losses))
@@ -338,7 +339,7 @@ class NetworkTrainer(object):
                     self.network.train()
                     # validation with train=True
                     val_losses = []
-                    for b in range(self.num_val_batches_per_epoch):
+                    for b in tqdm(range(self.num_val_batches_per_epoch)):
                         l = self.run_iteration(self.val_gen, False)
                         val_losses.append(l)
                     self.all_val_losses_tr_mode.append(np.mean(val_losses))
@@ -390,6 +391,10 @@ class NetworkTrainer(object):
         self.optimizer.zero_grad()
 
         output = self.network(data)
+        # ss = []
+        # ss.append(output)
+        # output = tuple([ss[-1]])
+        output = tuple([output])
         del data
 
         l = self.loss(output, target, sdf_heatmap)

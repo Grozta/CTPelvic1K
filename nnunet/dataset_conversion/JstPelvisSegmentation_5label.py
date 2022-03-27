@@ -55,7 +55,9 @@ if __name__ == "__main__":
     """
     train_dir = opts.train_dir
     output_folder = opts.output_dir
-    test_dir = "/path/to/testing dataset"
+    test_dir = "/data/datasets/CTPelvic1K/folds/fold5/test"
+    # test_dir = "/data/datasets/CTPelvic1K/all_data/nnUNet/rawdata/Task11_CTPelvic1K_test"
+    # test_dir = "/data/datasets/CTPelvic1K/all_data/nnUNet/rawdata/Task12_CTPelvic1K_test"
 
     img_dir = join(output_folder, "imagesTr")
     lab_dir = join(output_folder, "labelsTr")

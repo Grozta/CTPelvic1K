@@ -134,7 +134,7 @@ def load_model_and_checkpoint_files(folder, folds=None):
     # trainer.update_fold(None)
     # raise NotImplementedError("I think you should check here... liupengbo-20200621")
     print('prediction trainer.output_folder: ', trainer.output_folder)
-    trainer.initialize(False)
+    trainer.initialize(training=False)
     # raise NotImplementedError("I think you should check here... liupengbo-20200621")
     all_best_model_files = [join(i, "model_best.model") for i in folds]
     print("!!using the following model files: ", all_best_model_files)

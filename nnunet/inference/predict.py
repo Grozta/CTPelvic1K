@@ -38,7 +38,8 @@ def predict_save_to_queue(preprocess_fn, q ,list_of_lists, output_files, segs_fr
                                                                                  (l[0], segs_from_prev_stage[i])
                 seg_prev = seg_prev.transpose(transpose_forward)
                 # TODO cval=0
-                seg_reshaped = resize_segmentation(seg_prev, d.shape[1:], order=1, cval=0)
+                seg_reshaped = resize_segmentation(seg_prev, d.shape[1:], order=1)
+                # seg_reshaped = resize_segmentation(seg_prev, d.shape[1:], order=1, cval=0)
                 seg_reshaped = to_one_hot(seg_reshaped, classes)
                 d = np.vstack((d, seg_reshaped)).astype(np.float32)
             """There is a problem with python process communication that prevents us from communicating obejcts 
@@ -173,7 +174,7 @@ def predict_cases(model, list_of_lists, output_filenames, folds, save_npz,
                                                                             trainer.data_aug_params['mirror_axes'],
                                                                             True,
                                                                             True,
-                                                                            2,
+                                                                            2,  # TODO step
                                                                             trainer.patch_size,
                                                                             True)[None])
 

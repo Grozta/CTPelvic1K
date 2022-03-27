@@ -13,10 +13,11 @@ from nnunet.training.network_training.nnUNetTrainerCascadeFullRes import nnUNetT
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("network")  ### '2d', '3d_lowres', '3d_fullres', '3d_cascade_fullres'
+    parser.add_argument("network", default='3d_fullres')
+    # parser.add_argument("network")  ### '2d', '3d_lowres', '3d_fullres', '3d_cascade_fullres'
     parser.add_argument("network_trainer")  #### nnUNetTrainer
-    parser.add_argument("task")  ####  Task
-    parser.add_argument("fold", help='0, 1, ..., 5 or \'all\'')  ####
+    parser.add_argument("task", help="can be task name or task id", default=1)
+    parser.add_argument("fold", help='0, 1, ..., 5 or \'all\'', default=5)
     parser.add_argument("--ndet", required=False, default=False, action="store_true",
                         help="Per default training is deterministic, "
                              "nondeterministic allows cudnn.benchmark which will can give up to 20%% performance. "
@@ -86,7 +87,6 @@ if __name__ == "__main__":
     else:
         assert issubclass(trainer_class,
                           nnUNetTrainer), "network_trainer was found but is not derived from nnunetTrainer"  ### ....argument 'network_trainer' ...
-
     trainer = trainer_class(plans_file, fold,
                             output_folder=output_folder_name,
                             dataset_directory=dataset_directory,

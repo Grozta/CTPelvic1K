@@ -190,10 +190,12 @@ class ImageCropper(object):
             case_identifier = get_case_identifier(case)  # patient name
             list_of_args.append((case, case_identifier, overwrite_existing))  # (path s, name, bool)
 
-        p = Pool(self.num_threads)
-        p.map(self._load_crop_save_star, list_of_args)
-        p.close()
-        p.join()
+        with Pool(self.num_threads) as p:
+            p.map(self._load_crop_save_star, list_of_args)
+        # p = Pool(self.num_threads)
+        # p.map(self._load_crop_save_star, list_of_args)
+        # p.close()
+        # p.join()
 
     def load_properties(self, case_identifier):
         with open(os.path.join(self.output_folder, "%s.pkl" % case_identifier), 'rb') as f:

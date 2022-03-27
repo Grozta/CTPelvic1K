@@ -71,7 +71,8 @@ def computeQualityMeasures_oneCases(name, pred_path, target_path_file, postproce
 
     one_case_qualities = OrderedDict()
 
-    range_right = target.max() + 1
+    # range_right = target.max() + 1
+    range_right = 3 + 1
     for i in range(1, range_right):
         class_pred = np.zeros_like(pred)
         class_target = np.zeros_like(target)
@@ -111,16 +112,16 @@ def computeQualityMeasures_oneCases(name, pred_path, target_path_file, postproce
     one_case_qualities["weighted_mean_dice"] = weighted_mean_dice
     one_case_qualities["weighted_mean_acc"] = weighted_mean_acc
 
-    for i in range(range_right, 5):
-        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! {}: {} tianjia !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!".format(name, i))
-        one_case_qualities[i] = dict()
-        one_case_qualities[i]["Hausdorff"] = 0
-        one_case_qualities[i]["dice"] = 1
+    # for i in range(range_right, 5):
+    #     print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! {}: {} tianjia !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!".format(name, i))
+    #     one_case_qualities[i] = dict()
+    #     one_case_qualities[i]["Hausdorff"] = 0
+    #     one_case_qualities[i]["dice"] = 1
     print(name, '\n',
           '1: ', one_case_qualities[1], '\n',
           '2: ', one_case_qualities[2], '\n',
           '3: ', one_case_qualities[3], '\n',
-          '4: ', one_case_qualities[4], '\n',
+          # '4: ', one_case_qualities[4], '\n',
           'mean_hausdorff: ', one_case_qualities['mean_hausdorff'], '\n',
           'mean_dice: ', one_case_qualities['mean_dice'], '\n',
           'mean_acc: ', one_case_qualities['mean_acc'], '\n',
@@ -184,9 +185,9 @@ def computeQualityMeasures_oneModel(pred_path, target_path_file, subdataset, pos
     mean_3_dice = 0
     mean_3_haud = 0
     mean_3_acc = 0
-    mean_4_dice = 0
-    mean_4_haud = 0
-    mean_4_acc = 0
+    # mean_4_dice = 0
+    # mean_4_haud = 0
+    # mean_4_acc = 0
     mwhole_dice = 0
     mwhole_haud = 0
     mwhole_acc = 0
@@ -202,17 +203,17 @@ def computeQualityMeasures_oneModel(pred_path, target_path_file, subdataset, pos
         mean_1_dice += quailty[1]["dice"]
         mean_2_dice += quailty[2]["dice"]
         mean_3_dice += quailty[3]["dice"]
-        mean_4_dice += quailty[4]["dice"]
+        # mean_4_dice += quailty[4]["dice"]
         mwhole_dice += quailty["whole"]["dice"]
         mean_1_haud += quailty[1]["Hausdorff"]
         mean_2_haud += quailty[2]["Hausdorff"]
         mean_3_haud += quailty[3]["Hausdorff"]
-        mean_4_haud += quailty[4]["Hausdorff"]
+        # mean_4_haud += quailty[4]["Hausdorff"]
         mwhole_haud += quailty["whole"]["Hausdorff"]
         mean_1_acc += quailty[1]["acc"]
         mean_2_acc += quailty[2]["acc"]
         mean_3_acc += quailty[3]["acc"]
-        mean_4_acc += quailty[4]["acc"]
+        # mean_4_acc += quailty[4]["acc"]
         mwhole_acc += quailty["whole"]["acc"]
 
         mean_dice += quailty["mean_dice"]
@@ -231,9 +232,9 @@ def computeQualityMeasures_oneModel(pred_path, target_path_file, subdataset, pos
     print("mean_3_dice: ", mean_3_dice / idx)
     print("mean_3_huad: ", mean_3_haud / idx)
     print("mean_3_acc: ", mean_3_acc / idx)
-    print("mean_4_dice: ", mean_4_dice / idx)
-    print("mean_4_huad: ", mean_4_haud / idx)
-    print("mean_4_acc: ", mean_4_acc / idx)
+    # print("mean_4_dice: ", mean_4_dice / idx)
+    # print("mean_4_huad: ", mean_4_haud / idx)
+    # print("mean_4_acc: ", mean_4_acc / idx)
     print("mwhole_dice: ", mwhole_dice / idx)
     print("mwhole_haud: ", mwhole_haud / idx)
     print("mwhole_acc: ", mwhole_acc / idx)
@@ -259,7 +260,7 @@ if __name__ == '__main__':
     t_begin = time.time()
     # predbasePath = os.path.join(os.environ['HOME'], 'all_data/nnUNet/rawdata/ipcai2021_ALL_Test/')
     # predbasePath = '/media/peng/F/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred'
-    predbasePath = '/media/peng/F/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred_backup_out'
+    predbasePath = '/media/peng/F/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred_backup'
     # tarPath = os.path.join(os.environ['HOME'], 'all_data/nnUNet/rawdata/ipcai2021/')
     tarPath = '/media/peng/F/CTPelvic1K/folds/fold5/test/label'
 

@@ -25,6 +25,8 @@ class nnUNetTrainerCascadeFullRes(nnUNetTrainer):
         self.init_args = (plans_file, fold, output_folder, dataset_directory, batch_dice, stage, unpack_data,
                           deterministic, previous_trainer, fp16)
 
+        # FIXME
+        self.output_folder = None
         if self.output_folder is not None:
             task = self.output_folder.split("/")[-3]
             plans_identifier = self.output_folder.split("/")[-2].split("__")[-1]
