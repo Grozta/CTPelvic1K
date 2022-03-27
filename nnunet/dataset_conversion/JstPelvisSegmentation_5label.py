@@ -74,6 +74,8 @@ if __name__ == "__main__":
 
         shutil.copy(seg_file, join(lab_dir, pat_id + ".nii.gz"))
         return pat_id
+
+
     def load_save_test(args):
         data_file = args
         pat_id = data_file.split("/")[-1]
@@ -84,9 +86,9 @@ if __name__ == "__main__":
 
 
     nii_files_tr_data = subfiles(train_dir, True, None, "_data.nii.gz", True)
-    nii_files_tr_seg  = subfiles(train_dir, True, None, "_mask_4label.nii.gz", True)
+    nii_files_tr_seg = subfiles(train_dir, True, None, "_mask_4label.nii.gz", True)
 
-    nii_files_ts      = subfiles(test_dir, True, None, "_data.nii.gz", True)
+    nii_files_ts = subfiles(test_dir, True, None, "_data.nii.gz", True)
 
     p = Pool(16)
     train_ids = p.map(load_save_train, zip(nii_files_tr_data, nii_files_tr_seg))

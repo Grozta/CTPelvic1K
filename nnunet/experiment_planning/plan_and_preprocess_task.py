@@ -57,9 +57,10 @@ def create_lists_from_splitted_dataset(base_folder_splitted):
         training_files = d['training']
     num_modalities = len(d['modality'].keys())
     for tr in training_files:
-        cur_pat = []   # current patient
+        cur_pat = []  # current patient
         for mod in range(num_modalities):
-            cur_pat.append(join(base_folder_splitted, "imagesTr", tr['image'].split("/")[-1][:-7] + "_%04.0d.nii.gz" % mod))
+            cur_pat.append(
+                join(base_folder_splitted, "imagesTr", tr['image'].split("/")[-1][:-7] + "_%04.0d.nii.gz" % mod))
         cur_pat.append(join(base_folder_splitted, "labelsTr", tr['label'].split("/")[-1]))
         lists.append(cur_pat)
     return lists, {int(i): d['modality'][str(i)] for i in d['modality'].keys()}
@@ -125,13 +126,10 @@ def plan_and_preprocess(task_string, processes_lowres=8, processes_fullres=3, no
     if not no_preprocessing:
         exp_planner.run_preprocessing((processes_lowres, processes_fullres))
 
-
     exp_planner = ExperimentPlanner2D(cropped_out_dir, preprocessing_output_dir_this_task_train)
     exp_planner.plan_experiment()
     if not no_preprocessing:
         exp_planner.run_preprocessing(processes_fullres)
-
-
 
     if not no_preprocessing:
         p = Pool(processes_lowres)
@@ -141,7 +139,7 @@ def plan_and_preprocess(task_string, processes_lowres=8, processes_fullres=3, no
         for s in stages:
             print(s.split("/")[-1])
             list_of_npz_files = subfiles(s, True, None, ".npz", True)
-            list_of_pkl_files = [i[:-4]+".pkl" for i in list_of_npz_files]
+            list_of_pkl_files = [i[:-4] + ".pkl" for i in list_of_npz_files]
             all_classes = []
             for pk in list_of_pkl_files:
                 with open(pk, 'rb') as f:
@@ -155,6 +153,7 @@ def plan_and_preprocess(task_string, processes_lowres=8, processes_fullres=3, no
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--task', type=str, help="task name. There must be a matching folder in "
                                                        "raw_dataset_dir", required=True)
@@ -210,11 +209,14 @@ if __name__ == "__main__":
     else:
         raise ValueError("only 0 or 1 allowed for use_splitted")
 
-   # for current task: Task11_CTPelvic1K
-    if not use_splitted or not isdir(join(splitted_4d_output_dir, task)): # ensure is there splitted_folder have been existed or whether use it.
+    # for current task: Task11_CTPelvic1K
+    if not use_splitted or not isdir(
+            join(splitted_4d_output_dir, task)):  # ensure is there splitted_folder have been existed or whether use it.
         print("splitting task ", task)
-        split_4d(task) # split existing 4D image to some 3D images
+        split_4d(task)  # split existing 4D image to some 3D images
 
-    crop(task, override=override, num_threads=processes_lowres) # got cropped data and seg(with -1) in one array (m+1, d, h, w); and pkl with properties
-    analyze_dataset(task, override, collect_intensityproperties=True, num_processes=processes_lowres) # got two pkl file...
+    crop(task, override=override,
+         num_threads=processes_lowres)  # got cropped data and seg(with -1) in one array (m+1, d, h, w); and pkl with properties
+    analyze_dataset(task, override, collect_intensityproperties=True,
+                    num_processes=processes_lowres)  # got two pkl file...
     plan_and_preprocess(task, processes_lowres, processes_fullres, no_preprocessing)

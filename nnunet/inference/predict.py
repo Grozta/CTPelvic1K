@@ -1,5 +1,4 @@
 
-
 import argparse
 import numpy as np
 from batchgenerators.augmentations.utils import resize_segmentation
@@ -17,7 +16,7 @@ from nnunet.training.network_training.nnUNetTrainer import nnUNetTrainer
 from nnunet.utilities.one_hot_encoding import to_one_hot
 
 
-def predict_save_to_queue(preprocess_fn, q, list_of_lists, output_files, segs_from_prev_stage, classes, transpose_forward):
+def predict_save_to_queue(preprocess_fn, q ,list_of_lists, output_files, segs_from_prev_stage, classes, transpose_forward):
     errors_in = []
     for i, l in enumerate(list_of_lists):
         try:
@@ -26,7 +25,8 @@ def predict_save_to_queue(preprocess_fn, q, list_of_lists, output_files, segs_fr
             d, _, dct = preprocess_fn(l)
             # print(output_file, dct)
             if segs_from_prev_stage[i] is not None:
-                assert isfile(segs_from_prev_stage[i]) and segs_from_prev_stage[i].endswith(".nii.gz"), "segs_from_prev_stage" \
+                assert isfile(segs_from_prev_stage[i]) and segs_from_prev_stage[i].endswith \
+                    (".nii.gz"), "segs_from_prev_stage" \
                                                                                                   " must point to a " \
                                                                                                   "segmentation file"
                 seg_prev = sitk.GetArrayFromImage(sitk.ReadImage(segs_from_prev_stage[i]))
@@ -37,6 +37,7 @@ def predict_save_to_queue(preprocess_fn, q, list_of_lists, output_files, segs_fr
                                                                                  "shape! image: %s, seg_prev: %s" % \
                                                                                  (l[0], segs_from_prev_stage[i])
                 seg_prev = seg_prev.transpose(transpose_forward)
+                # TODO cval=0
                 seg_reshaped = resize_segmentation(seg_prev, d.shape[1:], order=1, cval=0)
                 seg_reshaped = to_one_hot(seg_reshaped, classes)
                 d = np.vstack((d, seg_reshaped)).astype(np.float32)
@@ -198,7 +199,8 @@ def predict_cases(model, list_of_lists, output_filenames, folds, save_npz,
         save_segmentation_nifti_from_softmax can take either filename or np.ndarray and will handle this automatically"""
 
         if np.prod(softmax_mean.shape) > (2e9 / 4 * 0.9):  # *0.9 just to be save
-            print("This output is too large for python process-process communication. Saving output temporarily to disk. {}".format(
+            print \
+                ("This output is too large for python process-process communication. Saving output temporarily to disk. {}".format(
                 output_filename[:-7] + ".npy"
             ))
             np.save(output_filename[:-7] + ".npy", softmax_mean)
@@ -249,7 +251,7 @@ def predict_from_folder(model, input_folder, output_folder, folds, save_npz, num
     print("list_of_lists: ", len(list_of_lists))
     print("for example: ", list_of_lists[0])
     print("for example: ", output_files[0])
-    print("\n" + "-_-"*20 + '\n')
+    print("\n" + "-_- " *20 + '\n')
 
     if lowres_segmentations is not None:
         assert isdir(lowres_segmentations), "if lowres_segmentations is not None then it must point to a directory"
@@ -373,4 +375,3 @@ if __name__ == "__main__":
     predict_from_folder(model, input_folder, output_folder, folds, save_npz, num_threads_preprocessing,
                         num_threads_nifti_save, lowres_segmentations, part_id, num_parts, tta,
                         overwrite_existing=overwrite)
-

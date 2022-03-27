@@ -1,7 +1,6 @@
-
-
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.getcwd()))
 
 import argparse
@@ -12,13 +11,12 @@ from batchgenerators.utilities.file_and_folder_operations import join, isdir
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", '--input_folder', help="Must contain all modalities for each patient in the correct"
-                                                           " order (same as training). Files must be named "
-                                                           "CASENAME_XXXX.nii.gz where XXXX is the modality "
-                                                           "identifier (0000, 0001, etc)", required=True)
+                                                     " order (same as training). Files must be named "
+                                                     "CASENAME_XXXX.nii.gz where XXXX is the modality "
+                                                     "identifier (0000, 0001, etc)", required=True)
     parser.add_argument('-o', "--output_folder", required=True, help="folder for saving predictions")
     parser.add_argument('-t', '--task_name', help='task name, required.',
                         default=default_plans_identifier, required=True)
-
 
     parser.add_argument('-tr', '--nnunet_trainer', help='nnUNet trainer class. Default: nnUNetTrainer', required=False,
                         default='nnUNetTrainer')
@@ -28,8 +26,8 @@ if __name__ == "__main__":
                         default=default_plans_identifier, required=False)
 
     parser.add_argument('-f', '--folds', nargs='+', default='None', help="folds to use for prediction. Default is None "
-                                                                       "which means that folds will be detected "
-                                                                       "automatically in the model output folder")
+                                                                         "which means that folds will be detected "
+                                                                         "automatically in the model output folder")
     parser.add_argument('-z', '--save_npz', required=False, action='store_true', help="use this if you want to ensemble"
                                                                                       " these predictions with those of"
                                                                                       " other models. Softmax "
@@ -39,8 +37,8 @@ if __name__ == "__main__":
                                                                                       "between output_folders with "
                                                                                       "merge_predictions.py")
     parser.add_argument('-l', '--lowres_segmentations', required=False, default='None', help="if model is the highres "
-                         "stage of the cascade then you need to use -l to specify where the segmentations of the "
-                         "corresponding lowres unet are. Here they are required to do a prediction")
+                                                                                             "stage of the cascade then you need to use -l to specify where the segmentations of the "
+                                                                                             "corresponding lowres unet are. Here they are required to do a prediction")
     parser.add_argument("--part_id", type=int, required=False, default=0, help="Used to parallelize the prediction of "
                                                                                "the folder over several GPUs. If you "
                                                                                "want to use n GPUs to predict this "
@@ -49,20 +47,21 @@ if __name__ == "__main__":
                                                                                "--num_parts=n (each with a different "
                                                                                "GPU (for example via "
                                                                                "CUDA_VISIBLE_DEVICES=X)")
-    parser.add_argument("--num_parts", type=int, required=False, default=1, help="Used to parallelize the prediction of "
-                                                                               "the folder over several GPUs. If you "
-                                                                               "want to use n GPUs to predict this "
-                                                                               "folder you need to run this command "
-                                                                               "n times with --part_id=0, ... n-1 and "
-                                                                               "--num_parts=n (each with a different "
-                                                                               "GPU (via "
-                                                                               "CUDA_VISIBLE_DEVICES=X)")
+    parser.add_argument("--num_parts", type=int, required=False, default=1,
+                        help="Used to parallelize the prediction of "
+                             "the folder over several GPUs. If you "
+                             "want to use n GPUs to predict this "
+                             "folder you need to run this command "
+                             "n times with --part_id=0, ... n-1 and "
+                             "--num_parts=n (each with a different "
+                             "GPU (via "
+                             "CUDA_VISIBLE_DEVICES=X)")
     parser.add_argument("--num_threads_preprocessing", required=False, default=6, type=int, help=
-                        "Determines many background processes will be used for data preprocessing. Reduce this if you "
-                        "run into out of memory (RAM) problems. Default: 6")
+    "Determines many background processes will be used for data preprocessing. Reduce this if you "
+    "run into out of memory (RAM) problems. Default: 6")
     parser.add_argument("--num_threads_nifti_save", required=False, default=2, type=int, help=
-                        "Determines many background processes will be used for segmentation export. Reduce this if you "
-                        "run into out of memory (RAM) problems. Default: 2")
+    "Determines many background processes will be used for segmentation export. Reduce this if you "
+    "run into out of memory (RAM) problems. Default: 2")
     parser.add_argument("--tta", required=False, type=int, default=0, help="Set to 0 to disable test time data "
                                                                            "augmentation (speedup of factor "
                                                                            "4(2D)/8(3D)), "
@@ -77,6 +76,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     import os
+
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
     input_folder = args.input_folder
@@ -89,14 +89,14 @@ if __name__ == "__main__":
     lowres_segmentations = args.lowres_segmentations
     num_threads_preprocessing = args.num_threads_preprocessing
     num_threads_nifti_save = args.num_threads_nifti_save
-    tta = args.tta # default = 0
+    tta = args.tta  # default = 0
     overwrite = args.overwrite_existing
 
-    output_folder_name = join(network_training_output_dir, # result_path/nnUNet_without_mirror
+    output_folder_name = join(network_training_output_dir,  # result_path/nnUNet_without_mirror
                               args.model,  # 3d_lowres
-                              args.task_name, # Task12_
+                              args.task_name,  # Task12_
                               args.nnunet_trainer + "__" + args.plans_identifier)
-    print('\n'*2, "using model stored in: ", output_folder_name)
+    print('\n ' * 2, "using model stored in: ", output_folder_name)
     assert isdir(output_folder_name), "model output folder not found: %s" % output_folder_name
 
     if lowres_segmentations == "None":
@@ -138,4 +138,3 @@ if __name__ == "__main__":
                         num_parts,
                         tta,
                         overwrite_existing=overwrite)
-

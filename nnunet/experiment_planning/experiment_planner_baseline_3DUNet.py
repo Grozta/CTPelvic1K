@@ -1,5 +1,4 @@
 
-
 from copy import deepcopy
 import numpy as np
 from nnunet.experiment_planning.DatasetAnalyzer import DatasetAnalyzer
@@ -19,7 +18,7 @@ from collections import OrderedDict
 
 
 class ExperimentPlanner(object):
-    def __init__(self, folder_with_cropped_data, preprocessed_output_folder):
+    def __init__(self, folder_with_cropped_data ,preprocessed_output_folder):
         self.folder_with_cropped_data = folder_with_cropped_data
         self.preprocessed_output_folder = preprocessed_output_folder
         self.list_of_cropped_npz_files = subfiles(self.folder_with_cropped_data, True, None, ".npz", True)
@@ -158,13 +157,16 @@ class ExperimentPlanner(object):
                 argsrt = np.argsort(new_shp / new_median_shape)[::-1]
                 pool_fct_per_axis = np.prod(pool_op_kernel_sizes, 0)
                 bottleneck_size_per_axis = new_shp / pool_fct_per_axis
-                shape_must_be_divisible_by = [shape_must_be_divisible_by[i] if bottleneck_size_per_axis[i] > 4 else shape_must_be_divisible_by[i] / 2
-                                              for i in range(len(bottleneck_size_per_axis))]
+                shape_must_be_divisible_by = \
+                    [shape_must_be_divisible_by[i] if bottleneck_size_per_axis[i] > 4 else shape_must_be_divisible_by[
+                                                                                              i] / 2
+                    for i in range(len(bottleneck_size_per_axis))]
                 new_shp[argsrt[0]] -= shape_must_be_divisible_by[argsrt[0]]
 
                 # we have to recompute numpool now:
                 network_num_pool_per_axis, pool_op_kernel_sizes, conv_kernel_sizes, new_shp, shape_must_be_divisible_by = \
-                    get_pool_and_conv_props_poolLateV2(new_shp, FEATUREMAP_MIN_EDGE_LENGTH_BOTTLENECK, Generic_UNet.MAX_NUMPOOL_3D, current_spacing)
+                    get_pool_and_conv_props_poolLateV2(new_shp, FEATUREMAP_MIN_EDGE_LENGTH_BOTTLENECK,
+                                                       Generic_UNet.MAX_NUMPOOL_3D, current_spacing)
 
                 here = Generic_UNet.compute_approx_vram_consumption(new_shp, network_num_pool_per_axis,
                                                                     Generic_UNet.BASE_NUM_FEATURES_3D,
@@ -182,7 +184,8 @@ class ExperimentPlanner(object):
             max_batch_size = max(max_batch_size, dataset_min_batch_size_cap)
             batch_size = min(batch_size, max_batch_size)
 
-            do_dummy_2D_data_aug = (max(input_patch_size) / input_patch_size[0]) > RESAMPLING_SEPARATE_Z_ANISOTROPY_THRESHOLD
+            do_dummy_2D_data_aug = (max(input_patch_size) / input_patch_size[
+                0]) > RESAMPLING_SEPARATE_Z_ANISOTROPY_THRESHOLD
 
             plan = {
                 'batch_size': batch_size,
@@ -215,7 +218,6 @@ class ExperimentPlanner(object):
         # self.transpose_backward = [np.argwhere(np.array(self.transpose_forward) == i)[0][0] for i in range(3)]
         self.transpose_forward = [0, 1, 2]
         self.transpose_backward = [0, 1, 2]
-
 
         # we base our calculations on the median shape of the datasets
         median_shape = np.median(np.vstack(new_shapes), 0)
@@ -269,7 +271,8 @@ class ExperimentPlanner(object):
                                            len(self.list_of_cropped_npz_files),
                                            num_modalities, len(all_classes) + 1)
 
-            if 1.5 * np.prod(new['median_patient_size_in_voxels'], dtype=np.int64) < np.prod(self.plans_per_stage[0]['median_patient_size_in_voxels'], dtype=np.int64):
+            if 1.5 * np.prod(new['median_patient_size_in_voxels'], dtype=np.int64) < np.prod(
+                    self.plans_per_stage[0]['median_patient_size_in_voxels'], dtype=np.int64):
                 self.plans_per_stage.append(new)
 
         self.plans_per_stage = self.plans_per_stage[::-1]
@@ -414,7 +417,6 @@ if __name__ == "__main__":
     maybe_mkdir_p(preprocessing_output_dir_this_task)
     shutil.copy(join(cropped_out_dir, "dataset_properties.pkl"), preprocessing_output_dir_this_task)
     shutil.copy(join(splitted_4d_output_dir, t, "dataset.json"), preprocessing_output_dir_this_task)
-
 
     exp_planner = ExperimentPlanner(cropped_out_dir, preprocessing_output_dir_this_task)
     exp_planner.plan_experiment()

@@ -6,6 +6,7 @@ import os
 from multiprocessing import Pool
 from functools import partial
 
+
 ###---###---###---###---###---###---###---###---###---###---###---###---###---###---###---###---###---###---###---###---
 def gatherfiles(path, prefix=None, midfix=None, postfix=None, extname=True):
     files = os.listdir(path)
@@ -21,6 +22,7 @@ def gatherfiles(path, prefix=None, midfix=None, postfix=None, extname=True):
         files = [os.path.splitext(i)[0] for i in files]
         return files
 
+
 def sdf_func(segImg):
     """
     segImg is a sitk Image
@@ -32,13 +34,15 @@ def sdf_func(segImg):
     seg[seg > 0.4999] = 1  # convert sdf back to numpy array, and clip 0.5 above to 1 (inside)
     return seg
 
+
 def raw_sdf_func(segImg):
     Sdf = sitk.SignedMaurerDistanceMap(segImg, insideIsPositive=False, squaredDistance=False)
     seg = sitk.GetArrayFromImage(Sdf)
 
     return seg
 
-def newsdf_post_processor(pred, main_region_th = 100000, sdf_th = 35, region_th = 2000):
+
+def newsdf_post_processor(pred, main_region_th=100000, sdf_th=35, region_th=2000):
     pred_test = pred.copy()
     mask_whole = np.zeros_like(pred_test)
     for anot in range(1, pred.max() + 1):
@@ -96,7 +100,7 @@ def newsdf_post_processor(pred, main_region_th = 100000, sdf_th = 35, region_th 
     return result
 
 
-def maximum_connected_region_post_processor(pred, region_th = 100000):
+def maximum_connected_region_post_processor(pred, region_th=100000):
     """
     pred: multi-label
     return: multi-label
@@ -104,9 +108,9 @@ def maximum_connected_region_post_processor(pred, region_th = 100000):
     pred_test = pred.copy()
     mask_whole = np.zeros_like(pred)
 
-    for i in range(1, pred.max()+1):
+    for i in range(1, pred.max() + 1):
         pred_single = np.zeros_like(pred_test)
-        pred_single[pred_test==i] = 1
+        pred_single[pred_test == i] = 1
 
         connected_label = label(pred_single, connectivity=pred_single.ndim)
         props = regionprops(connected_label)
@@ -115,36 +119,40 @@ def maximum_connected_region_post_processor(pred, region_th = 100000):
         mask_single = np.zeros_like(pred)
         for i in range(len(sorted_Props)):
             # print(sorted_Props[i]['area'],sorted_Props[i]['label'])
-            if sorted_Props[i]['area']>region_th or i==0: # i==0, make sure the biggest area can be keeped.
-                mask_single[connected_label==sorted_Props[i]['label']] = 1
+            if sorted_Props[i]['area'] > region_th or i == 0:  # i==0, make sure the biggest area can be keeped.
+                mask_single[connected_label == sorted_Props[i]['label']] = 1
             else:
                 pass
 
-        mask_whole[mask_single>0]=1
+        mask_whole[mask_single > 0] = 1
 
-    return mask_whole*pred
+    return mask_whole * pred
+
 
 if __name__ == '__main__':
     """
     SDF post processor
     
     """
+
+
     def func(name, path, savepath, post='sdf'):
-        _, image, meta = _sitk_Image_reader(path+'/'+name)
+        _, image, meta = _sitk_Image_reader(path + '/' + name)
         print(name, image.shape)
-        if post=='sdf':
+        if post == 'sdf':
             post_image = newsdf_post_processor(pred=image, region_th=2000, sdf_th=35)
-        elif post=='mcr':
+        elif post == 'mcr':
             post_image = maximum_connected_region_post_processor(image, region_th=100000)
         else:
             raise NotImplementedError
 
-        _sitk_image_writer(post_image, meta, savepath+'/'+name)
+        _sitk_image_writer(post_image, meta, savepath + '/' + name)
+
 
     base_dir = os.environ['HOME']
     pred_path = base_dir + "/all_data/nnUNet/rawdata/ipcai2021_ALL_Test/SDF_show" \
-                "/Task22_ipcai2021_T__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__fold0_3dcascadefullres_pred"
-    save_path = pred_path+'___newSDFpost'
+                           "/Task22_ipcai2021_T__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__fold0_3dcascadefullres_pred"
+    save_path = pred_path + '___newSDFpost'
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     print(pred_path)
@@ -158,7 +166,6 @@ if __name__ == '__main__':
 
     pool = Pool(16)
     fu = partial(func, path=pred_path, savepath=save_path)
-    _=pool.map(fu, files)
+    _ = pool.map(fu, files)
     pool.close()
     pool.join()
-

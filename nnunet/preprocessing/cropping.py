@@ -1,5 +1,3 @@
-
-
 import SimpleITK as sitk
 import numpy as np
 import shutil
@@ -10,7 +8,8 @@ from collections import OrderedDict
 
 def create_nonzero_mask(data):
     from scipy.ndimage import binary_fill_holes
-    assert len(data.shape) == 4 or len(data.shape) == 3, "data must have shape (C, X, Y, Z) or shape (C, X, Y)" # ......??? 3 ????
+    assert len(data.shape) == 4 or len \
+        (data.shape) == 3, "data must have shape (C, X, Y, Z) or shape (C, X, Y)"  # ......??? 3 ????
     nonzero_mask = np.zeros(data.shape[1:], dtype=bool)
     for c in range(data.shape[0]):
         this_mask = data[c] != 0
@@ -32,7 +31,8 @@ def get_bbox_from_mask(mask, outside_value=0):
 
 def crop_to_bbox(image, bbox):
     assert len(image.shape) == 3, "only supports 3d images"
-    resizer = (slice(bbox[0][0], bbox[0][1]), slice(bbox[1][0], bbox[1][1]), slice(bbox[2][0], bbox[2][1])) # ???? used for what ??? slice
+    resizer = (slice(bbox[0][0], bbox[0][1]), slice(bbox[1][0], bbox[1][1]),
+               slice(bbox[2][0], bbox[2][1]))  # ???? used for what ??? slice
     return image[resizer]
 
 
@@ -60,7 +60,8 @@ def load_case_from_list_of_files(data_files, seg_file=None):
     properties["itk_spacing"] = data_itk[0].GetSpacing()
     properties["itk_direction"] = data_itk[0].GetDirection()
 
-    data_npy = np.vstack([sitk.GetArrayFromImage(d)[None] for d in data_itk]) # shape (d, h, w) will change to (1, d, h, w) with [None]. Then come to (modalities, d, h, w)
+    data_npy = np.vstack([sitk.GetArrayFromImage(d)[None] for d in
+                          data_itk])  # shape (d, h, w) will change to (1, d, h, w) with [None]. Then come to (modalities, d, h, w)
     if seg_file is not None:
         seg_itk = sitk.ReadImage(seg_file)
         seg_npy = sitk.GetArrayFromImage(seg_itk)[None].astype(np.float32)
@@ -95,7 +96,7 @@ def crop_to_nonzero(data, seg=None, nonzero_label=-1):
 
     nonzero_mask = crop_to_bbox(nonzero_mask, bbox)[None]
     if seg is not None:
-        seg[(seg == 0) & (nonzero_mask == 0)] = nonzero_label    # ??????? why ??????
+        seg[(seg == 0) & (nonzero_mask == 0)] = nonzero_label  # ??????? why ??????
     else:
         nonzero_mask = nonzero_mask.astype(int)
         nonzero_mask[nonzero_mask == 0] = nonzero_label
@@ -105,7 +106,7 @@ def crop_to_nonzero(data, seg=None, nonzero_label=-1):
 
 
 def get_patient_identifiers_from_cropped_files(folder):
-    return [i.split("/")[-1][:-4] for i in subfiles(folder, join=True, suffix=".npz")] ### ...... feizhejingansha....
+    return [i.split("/")[-1][:-4] for i in subfiles(folder, join=True, suffix=".npz")]  ### ...... feizhejingansha....
 
 
 class ImageCropper(object):
@@ -133,14 +134,15 @@ class ImageCropper(object):
               "spacing:", np.array(properties["original_spacing"]), "\n")
 
         properties["crop_bbox"] = bbox
-        properties['classes'] = np.unique(seg)  #  ???? with -1 ??????
-        seg[seg < -1] = 0                       # ???? why there could be voxel value smaller than -1
+        properties['classes'] = np.unique(seg)  # ???? with -1 ??????
+        seg[seg < -1] = 0  # ???? why there could be voxel value smaller than -1
         properties["size_after_cropping"] = data[0].shape
         return data, seg, properties
 
     @staticmethod
     def crop_from_list_of_files(data_files, seg_file=None):
-        data, seg, properties = load_case_from_list_of_files(data_files, seg_file)  # (m, d, h, w), (1, d, h, w), dict of image information
+        data, seg, properties = load_case_from_list_of_files(data_files,
+                                                             seg_file)  # (m, d, h, w), (1, d, h, w), dict of image information
         return ImageCropper.crop(data, properties, seg)
 
     def load_crop_save(self, case, case_identifier, overwrite_existing=False):
@@ -148,11 +150,11 @@ class ImageCropper(object):
         if overwrite_existing \
                 or (not os.path.isfile(os.path.join(self.output_folder, "%s.npz" % case_identifier))
                     or not os.path.isfile(os.path.join(self.output_folder, "%s.pkl" % case_identifier))):
-
             data, seg, properties = self.crop_from_list_of_files(case[:-1], case[-1])
 
             all_data = np.vstack((data, seg))
-            np.savez_compressed(os.path.join(self.output_folder, "%s.npz" % case_identifier), data=all_data) # (modality+1, d  h, w) array
+            np.savez_compressed(os.path.join(self.output_folder, "%s.npz" % case_identifier),
+                                data=all_data)  # (modality+1, d  h, w) array
             with open(os.path.join(self.output_folder, "%s.pkl" % case_identifier), 'wb') as f:
                 pickle.dump(properties, f)
 
@@ -186,7 +188,7 @@ class ImageCropper(object):
         list_of_args = []
         for j, case in enumerate(list_of_files):
             case_identifier = get_case_identifier(case)  # patient name
-            list_of_args.append((case, case_identifier, overwrite_existing)) # (path s, name, bool)
+            list_of_args.append((case, case_identifier, overwrite_existing))  # (path s, name, bool)
 
         p = Pool(self.num_threads)
         p.map(self._load_crop_save_star, list_of_args)

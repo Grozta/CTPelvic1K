@@ -6,6 +6,7 @@ from nnunet.training.loss_functions.ND_Crossentropy import CrossentropyND, Cross
 from nnunet.utilities.tensor_utilities import sum_tensor
 from torch import nn
 
+
 def get_tp_fp_fn(net_output, gt, axes=None, mask=None, square=False):
     """
     net_output must be (b, c, x, y(, z)))
@@ -107,8 +108,9 @@ class DC_and_CE_loss(nn.Module):
         if self.aggregate == "sum":
             result = ce_loss + dc_loss
         else:
-            raise NotImplementedError("nah son") # reserved for other stuff (later)
+            raise NotImplementedError("nah son")  # reserved for other stuff (later)
         return result
+
 
 class DC_and_topk_loss(nn.Module):
     def __init__(self, soft_dice_kwargs, ce_kwargs, aggregate="sum"):
@@ -123,7 +125,7 @@ class DC_and_topk_loss(nn.Module):
         if self.aggregate == "sum":
             result = ce_loss + dc_loss
         else:
-            raise NotImplementedError("nah son") # reserved for other stuff (later?)
+            raise NotImplementedError("nah son")  # reserved for other stuff (later?)
         return result
 
 
@@ -132,6 +134,7 @@ def reverse_gt(target_onehot):
     for i in range(target_onehot.shape[1]):
         reversed_gt_onehot[:, i] = 1 - target_onehot[:, i]
     return reversed_gt_onehot
+
 
 def _convert_target2onehot(input, target):
     """
@@ -143,6 +146,7 @@ def _convert_target2onehot(input, target):
     target_onehot.scatter_(1, target, 1)
     return target_onehot
 
+
 class Exclusion_loss(nn.Module):
     def __init__(self, union_func):
         super(Exclusion_loss, self).__init__()
@@ -151,13 +155,14 @@ class Exclusion_loss(nn.Module):
     def forward(self, network_output, target):
         return -self.union(network_output, target)
 
+
 class DC_and_CE_Exclusion_loss(DC_and_CE_loss):
     def __init__(self, soft_dice_kwargs, ce_kwargs, aggregate="sum", ex=True, rate=2):
         super(DC_and_CE_Exclusion_loss, self).__init__(soft_dice_kwargs, ce_kwargs, aggregate)
         self.ex = Exclusion_loss(self.dc)
         self.ex_choice = ex
         self.rate = rate
-        assert self.rate>=0
+        assert self.rate >= 0
 
     def forward(self, net_output, target, sdf_heatmap):
         dc_loss = self.dc(net_output, target)
@@ -174,6 +179,7 @@ class DC_and_CE_Exclusion_loss(DC_and_CE_loss):
         if self.ex_choice:
             result = result + self.rate * ex_loss
         return result
+
 
 # --------------------------- deep s ----------------------------------
 class SoftDiceLoss_DeepS(nn.Module):
@@ -213,7 +219,8 @@ class SoftDiceLoss_DeepS(nn.Module):
             dcs.append(dc)
         dcs = [dc * weight for dc, weight in zip(dcs, self.DSweights)]
         # print("dice loss device: ",sum(dcs).device)
-        return -sum(dcs)/len(dcs)
+        return -sum(dcs) / len(dcs)
+
 
 class DownPooling(nn.Module):
     def __init__(self, deepspool):
@@ -232,12 +239,14 @@ class DownPooling(nn.Module):
         target1 = self.pool1(target0)
         target2 = self.pool2(target1)
 
-        return [target, target0,target1,target2]
+        return [target, target0, target1, target2]
+
 
 class DC_and_CE_Exclusion_loss_DeepS(nn.Module):
     def __init__(self, soft_dice_kwargs, ce_kwargs, aggregate="sum", ex=True, rate=2, deepspool=None):
         super(DC_and_CE_Exclusion_loss_DeepS, self).__init__()
-        self.down_gt = DownPooling(deepspool) # not a good implementation of this calculation. Upsample pred maybe a good attempt.
+        self.down_gt = DownPooling(
+            deepspool)  # not a good implementation of this calculation. Upsample pred maybe a good attempt.
 
         self.aggregate = aggregate
         self.ce = CrossentropyND_DeepS(**ce_kwargs)
@@ -246,6 +255,7 @@ class DC_and_CE_Exclusion_loss_DeepS(nn.Module):
         self.ex_choice = ex
         self.rate = rate
         assert self.rate >= 0
+
     def forward(self, net_outputs, target, sdf_heatmap):
         targets = self.down_gt(target)
 
@@ -256,18 +266,19 @@ class DC_and_CE_Exclusion_loss_DeepS(nn.Module):
         else:
             raise NotImplementedError("nah son")
 
-
         if self.ex_choice:
-            target_onehots = [_convert_target2onehot(net_output, target.long()) for net_output, target in zip(net_outputs, targets)]
+            target_onehots = [_convert_target2onehot(net_output, target.long()) for net_output, target in
+                              zip(net_outputs, targets)]
             not_gts = [reverse_gt(target_onehot) for target_onehot in target_onehots]
             ex_loss = self.ex(net_outputs, not_gts)
 
             result = result + self.rate * ex_loss
         return result
+
+
 if __name__ == '__main__':
     dow = DownPooling([[1, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]])
 
-    ipt = torch.zeros(2,5,64,64,64)
+    ipt = torch.zeros(2, 5, 64, 64, 64)
     print(ipt.shape)
     resuts = dow(ipt)
-

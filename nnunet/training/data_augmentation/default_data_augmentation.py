@@ -1,12 +1,19 @@
 from copy import deepcopy
 import numpy as np
-from batchgenerators.dataloading import MultiThreadedAugmenter
-from batchgenerators.transforms import Compose, RenameTransform, GammaTransform, SpatialTransform
-from batchgenerators.transforms import DataChannelSelectionTransform, SegChannelSelectionTransform
-from batchgenerators.transforms import MirrorTransform, NumpyToTensor
-from batchgenerators.transforms.utility_transforms import RemoveLabelTransform
+# from batchgenerators.dataloading import MultiThreadedAugmenter
+# from batchgenerators.transforms import Compose, RenameTransform, GammaTransform, SpatialTransform
+# from batchgenerators.transforms import DataChannelSelectionTransform, SegChannelSelectionTransform
+# from batchgenerators.transforms import MirrorTransform, NumpyToTensor
+from batchgenerators.dataloading.multi_threaded_augmenter import MultiThreadedAugmenter
+from batchgenerators.transforms.abstract_transforms import Compose
+from batchgenerators.transforms.channel_selection_transforms import DataChannelSelectionTransform, \
+    SegChannelSelectionTransform
+from batchgenerators.transforms.color_transforms import GammaTransform
+from batchgenerators.transforms.spatial_transforms import SpatialTransform, MirrorTransform
+from batchgenerators.transforms.utility_transforms import RemoveLabelTransform, RenameTransform, NumpyToTensor
 from nnunet.training.data_augmentation.pyramid_augmentations import MoveSegAsOneHotToData, \
-    RemoveRandomConnectedComponentFromOneHotEncodingTransform, ApplyRandomBinaryOperatorTransform, MoveLastFewDataToSeg_pbl
+    RemoveRandomConnectedComponentFromOneHotEncodingTransform, ApplyRandomBinaryOperatorTransform, \
+    MoveLastFewDataToSeg_pbl
 from nnunet.training.data_augmentation.custom_transforms import Convert3DTo2DTransform, Convert2DTo3DTransform, \
     MaskTransform
 
@@ -19,7 +26,7 @@ default_3D_augmentation_params = {
     "do_scaling": True,
     "scale_range": (0.85, 1.25),
     "do_rotation": True,
-    "rotation_x": (-15./360 * 2. * np.pi, 15./360 * 2. * np.pi),
+    "rotation_x": (-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi),
     "rotation_y": (-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi),
     "rotation_z": (-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi),
     "random_crop": False,
@@ -30,8 +37,8 @@ default_3D_augmentation_params = {
     "p_gamma": 0.3,
     "num_threads": 12,
     "num_cached_per_thread": 1,
-    "mirror": False, # modified
-    "mirror_axes": (), # modified
+    "mirror": False,  # modified
+    "mirror_axes": (),  # modified
     "p_eldef": 0.2,
     "p_scale": 0.2,
     "p_rot": 0.2,
@@ -47,13 +54,13 @@ default_2D_augmentation_params = deepcopy(default_3D_augmentation_params)
 
 default_2D_augmentation_params["elastic_deform_alpha"] = (0., 200.)
 default_2D_augmentation_params["elastic_deform_sigma"] = (9., 13.)
-default_2D_augmentation_params["rotation_x"] = (-180./360 * 2. * np.pi, 180./360 * 2. * np.pi)
+default_2D_augmentation_params["rotation_x"] = (-180. / 360 * 2. * np.pi, 180. / 360 * 2. * np.pi)
 
 # sometimes you have 3d data and a 3d net but cannot augment them properly in 3d due to anisotropy (which is currently
 # not supported in batchgenerators). In that case you can 'cheat' and transfer your 3d data into 2d data and
 # transform them back after augmentation
 default_2D_augmentation_params["dummy_2D"] = False
-default_2D_augmentation_params["mirror_axes"] = ()# todo:(0, 1)  # this can be (0, 1, 2) if dummy_2D=True
+default_2D_augmentation_params["mirror_axes"] = ()  # todo:(0, 1)  # this can be (0, 1, 2) if dummy_2D=True
 
 
 def get_patch_size(final_patch_size, rot_x, rot_y, rot_z, scale_range):
@@ -63,9 +70,9 @@ def get_patch_size(final_patch_size, rot_x, rot_y, rot_z, scale_range):
         rot_y = max(np.abs(rot_y))
     if isinstance(rot_z, (tuple, list)):
         rot_z = max(np.abs(rot_z))
-    rot_x = min(90/360 * 2. * np.pi, rot_x)
-    rot_y = min(90/360 * 2. * np.pi, rot_y)
-    rot_z = min(90/360 * 2. * np.pi, rot_z)
+    rot_x = min(90 / 360 * 2. * np.pi, rot_x)
+    rot_y = min(90 / 360 * 2. * np.pi, rot_y)
+    rot_z = min(90 / 360 * 2. * np.pi, rot_z)
     from batchgenerators.augmentations.utils import rotate_coords_3d, rotate_coords_2d
     coords = np.array(final_patch_size)
     final_shape = np.copy(coords)
@@ -114,15 +121,17 @@ def get_default_augmentation(dataloader_train, dataloader_val, patch_size, param
                                           p_el_per_sample=params.get("p_eldef"),
                                           p_scale_per_sample=params.get("p_scale"),
                                           p_rot_per_sample=params.get("p_rot")
-    ))
+                                          ))
     if params.get("dummy_2D") is not None and params.get("dummy_2D"):
         tr_transforms.append(Convert2DTo3DTransform())
 
     if params.get("move_last_few_data_chanels_to_data"):
-        tr_transforms.append(MoveLastFewDataToSeg_pbl(params.get("last_few_data_channels"),'data', 'seg'))
+        tr_transforms.append(MoveLastFewDataToSeg_pbl(params.get("last_few_data_channels"), 'data', 'seg'))
 
     if params.get("do_gamma"):
-        tr_transforms.append(GammaTransform(params.get("gamma_range"), False, True, retain_stats=params.get("gamma_retain_stats"), p_per_sample=params["p_gamma"]))
+        tr_transforms.append(
+            GammaTransform(params.get("gamma_range"), False, True, retain_stats=params.get("gamma_retain_stats"),
+                           p_per_sample=params["p_gamma"]))
 
     if params.get('mirror'):
         tr_transforms.append(MirrorTransform(params.get("mirror_axes")))
@@ -132,21 +141,25 @@ def get_default_augmentation(dataloader_train, dataloader_val, patch_size, param
     if params.get("move_last_seg_chanel_to_data") is not None and params.get("move_last_seg_chanel_to_data"):
         tr_transforms.append(MoveSegAsOneHotToData(1, params.get("all_segmentation_labels"), 'seg', 'data'))
         if params.get("advanced_pyramid_augmentations") and not None and params.get("advanced_pyramid_augmentations"):
-            tr_transforms.append(ApplyRandomBinaryOperatorTransform(channel_idx=list(range(-len(params.get("all_segmentation_labels")), 0)),
-                                                                    p_per_sample=0.4,
-                                                                    key="data",
-                                                                    strel_size=(1, 8)))
-            tr_transforms.append(RemoveRandomConnectedComponentFromOneHotEncodingTransform(channel_idx=list(range(-len(params.get("all_segmentation_labels")), 0)),
-                                                                                           key="data",
-                                                                                           p_per_sample=0.2,
-                                                                                           fill_with_other_class_p=0.0,
-                                                                                           dont_do_if_covers_more_than_X_percent=0.15))
+            tr_transforms.append(ApplyRandomBinaryOperatorTransform(
+                channel_idx=list(range(-len(params.get("all_segmentation_labels")), 0)),
+                p_per_sample=0.4,
+                key="data",
+                strel_size=(1, 8)))
+            tr_transforms.append(RemoveRandomConnectedComponentFromOneHotEncodingTransform(
+                channel_idx=list(range(-len(params.get("all_segmentation_labels")), 0)),
+                key="data",
+                p_per_sample=0.2,
+                fill_with_other_class_p=0.0,
+                dont_do_if_covers_more_than_X_percent=0.15))
 
     tr_transforms.append(RenameTransform('seg', 'target', True))
     tr_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
     tr_transforms = Compose(tr_transforms)
 
-    batchgenerator_train = MultiThreadedAugmenter(dataloader_train, tr_transforms, params.get('num_threads'), params.get("num_cached_per_thread"), seeds=seeds_train, pin_memory=pin_memory)
+    batchgenerator_train = MultiThreadedAugmenter(dataloader_train, tr_transforms, params.get('num_threads'),
+                                                  params.get("num_cached_per_thread"), seeds=seeds_train,
+                                                  pin_memory=pin_memory)
 
     val_transforms = []
     val_transforms.append(RemoveLabelTransform(-1, 0))
@@ -156,7 +169,8 @@ def get_default_augmentation(dataloader_train, dataloader_val, patch_size, param
         val_transforms.append(SegChannelSelectionTransform(params.get("selected_seg_channels")))
 
     if params.get("move_last_few_data_chanels_to_data"):
-        val_transforms.append(MoveLastFewDataToSeg_pbl(params.get("last_few_data_channels"),'data', 'seg')) # [seg_gt, pre_seg, sdf]
+        val_transforms.append(
+            MoveLastFewDataToSeg_pbl(params.get("last_few_data_channels"), 'data', 'seg'))  # [seg_gt, pre_seg, sdf]
 
     if params.get("move_last_seg_chanel_to_data") is not None and params.get("move_last_seg_chanel_to_data"):
         val_transforms.append(MoveSegAsOneHotToData(1, params.get("all_segmentation_labels"), 'seg', 'data'))
@@ -165,11 +179,14 @@ def get_default_augmentation(dataloader_train, dataloader_val, patch_size, param
     val_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
     val_transforms = Compose(val_transforms)
 
-    batchgenerator_val = MultiThreadedAugmenter(dataloader_val, val_transforms, max(params.get('num_threads')//2, 1), params.get("num_cached_per_thread"), seeds=seeds_val, pin_memory=pin_memory)
+    batchgenerator_val = MultiThreadedAugmenter(dataloader_val, val_transforms, max(params.get('num_threads') // 2, 1),
+                                                params.get("num_cached_per_thread"), seeds=seeds_val,
+                                                pin_memory=pin_memory)
     return batchgenerator_train, batchgenerator_val
 
 
-def get_no_augmentation(dataloader_train, dataloader_val, patch_size, params=default_3D_augmentation_params, border_val_seg=-1):
+def get_no_augmentation(dataloader_train, dataloader_val, patch_size, params=default_3D_augmentation_params,
+                        border_val_seg=-1):
     """
     use this instead of get_default_augmentation (drop in replacement) to turn off all data augmentation
     :param dataloader_train:
@@ -209,9 +226,8 @@ def get_no_augmentation(dataloader_train, dataloader_val, patch_size, params=def
     val_transforms.append(NumpyToTensor(['data', 'target'], 'float'))
     val_transforms = Compose(val_transforms)
 
-    batchgenerator_val = MultiThreadedAugmenter(dataloader_val, val_transforms, max(params.get('num_threads')//2, 1),
+    batchgenerator_val = MultiThreadedAugmenter(dataloader_val, val_transforms, max(params.get('num_threads') // 2, 1),
                                                 params.get("num_cached_per_thread"),
-                                                seeds=range(max(params.get('num_threads')//2, 1)), pin_memory=True)
+                                                seeds=range(max(params.get('num_threads') // 2, 1)), pin_memory=True)
     batchgenerator_val.restart()
     return batchgenerator_train, batchgenerator_val
-

@@ -20,7 +20,8 @@ def recursive_find_trainer(folder, trainer_name, current_module):
         for importer, modname, ispkg in pkgutil.iter_modules(folder):
             if ispkg:
                 next_current_module = current_module + "." + modname
-                tr = recursive_find_trainer([join(folder[0], modname)], trainer_name, current_module=next_current_module)
+                tr = recursive_find_trainer([join(folder[0], modname)], trainer_name,
+                                            current_module=next_current_module)
             if tr is not None:
                 break
 
@@ -56,17 +57,18 @@ def restore_model(pkl_file, checkpoint=None, train=False):
             pass
 
     if tr is None:
-        raise RuntimeError("Could not find the model trainer specified in checkpoint in nnunet.trainig.network_training. If it "
-                           "is not located there, please move it or change the code of restore_model. Your model "
-                           "trainer can be located in any directory within nnunet.trainig.network_training (search is recursive)."
-                           "\nDebug info: \ncheckpoint file: %s\nName of trainer: %s " % (checkpoint, name))
+        raise RuntimeError(
+            "Could not find the model trainer specified in checkpoint in nnunet.trainig.network_training. If it "
+            "is not located there, please move it or change the code of restore_model. Your model "
+            "trainer can be located in any directory within nnunet.trainig.network_training (search is recursive)."
+            "\nDebug info: \ncheckpoint file: %s\nName of trainer: %s " % (checkpoint, name))
     assert issubclass(tr, nnUNetTrainer), "The network trainer was found but is not a subclass of nnUNetTrainer. " \
                                           "Please make it so!"
 
-    print(len(init),'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    print(len(init), '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
     if init[0].endswith('2D.pkl'):
-        initnew = list(init)+['2d']
+        initnew = list(init) + ['2d']
         del init
         init = tuple(initnew)
 
@@ -124,19 +126,20 @@ def load_model_and_checkpoint_files(folder, folds=None):
     else:
         raise ValueError("Unknown value for folds. Type: %s. Expected: list of int, int, str or None", str(type(folds)))
 
-    print('we will really load fold[0]: ',folds[0])
+    print('we will really load fold[0]: ', folds[0])
     trainer = restore_model(join(folds[0], "model_best.model.pkl"))
     trainer.output_folder = folder
     trainer.output_folder_base = folder
     trainer.update_fold(0)
     # trainer.update_fold(None)
     # raise NotImplementedError("I think you should check here... liupengbo-20200621")
-    print('prediction trainer.output_folder: ',trainer.output_folder)
+    print('prediction trainer.output_folder: ', trainer.output_folder)
     trainer.initialize(False)
     # raise NotImplementedError("I think you should check here... liupengbo-20200621")
     all_best_model_files = [join(i, "model_best.model") for i in folds]
     print("!!using the following model files: ", all_best_model_files)
-    all_params = [torch.load(i, map_location=torch.device('cuda', torch.cuda.current_device())) for i in all_best_model_files]
+    all_params = [torch.load(i, map_location=torch.device('cuda', torch.cuda.current_device())) for i in
+                  all_best_model_files]
     return trainer, all_params
 
 

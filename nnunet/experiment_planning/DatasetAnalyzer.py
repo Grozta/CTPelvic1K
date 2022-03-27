@@ -1,5 +1,4 @@
 
-
 from batchgenerators.utilities.file_and_folder_operations import *
 from multiprocessing import Pool
 from nnunet.paths import splitted_4d_output_dir, cropped_output_dir
@@ -11,7 +10,7 @@ from collections import OrderedDict
 
 
 class DatasetAnalyzer(object):
-    def __init__(self, folder_with_cropped_data, overwrite=True, num_processes=8):
+    def __init__(self, folder_with_cropped_data, overwrite=True ,num_processes=8):
         """
         :param folder_with_cropped_data:
         :param overwrite: If True then precomputed values will not be used and instead recomputed from the data.
@@ -22,8 +21,10 @@ class DatasetAnalyzer(object):
         self.overwrite = overwrite
         self.folder_with_cropped_data = folder_with_cropped_data
         self.sizes = self.spacings = None
-        self.patient_identifiers = get_patient_identifiers_from_cropped_files(self.folder_with_cropped_data) ###  npz file names
-        assert isfile(join(self.folder_with_cropped_data, "dataset.json")), "dataset.json needs to be in folder_with_cropped_data"
+        self.patient_identifiers = get_patient_identifiers_from_cropped_files \
+            (self.folder_with_cropped_data) ###  npz file names
+        assert isfile \
+            (join(self.folder_with_cropped_data, "dataset.json")), "dataset.json needs to be in folder_with_cropped_data"
 
         self.props_per_case_file = join(self.folder_with_cropped_data, "props_per_case.pkl")
         self.intensityproperties_file = join(self.folder_with_cropped_data, "intensityproperties.pkl")
@@ -83,10 +84,12 @@ class DatasetAnalyzer(object):
         for c in all_classes:
             regions.append((c, ))
 
-        all_in_one_region = self._check_if_all_in_one_region((seg, regions)) # check are these classes or class itself in a connected region
+        all_in_one_region = self._check_if_all_in_one_region \
+            ((seg, regions)) # check are these classes or class itself in a connected region
 
         # 2 & 3) region sizes
-        volume_per_class, region_sizes = self._collect_class_and_region_sizes((seg, all_classes, vol_per_voxel)) # volume of each class; volume of each subregion of each class
+        volume_per_class, region_sizes = self._collect_class_and_region_sizes \
+            ((seg, all_classes, vol_per_voxel)) # volume of each class; volume of each subregion of each class
 
         return unique_classes, all_in_one_region, volume_per_class, region_sizes
 
@@ -101,12 +104,14 @@ class DatasetAnalyzer(object):
 
         if self.overwrite or not isfile(self.props_per_case_file):
             p = Pool(self.num_processes)
-            res = p.map(self._load_seg_analyze_classes, zip(self.patient_identifiers, [all_classes] * len(self.patient_identifiers))) # list of list of each patient's classes' properties
+            res = p.map(self._load_seg_analyze_classes, zip(self.patient_identifiers, [all_classes] * len
+                (self.patient_identifiers))) # list of list of each patient's classes' properties
             p.close()
             p.join()
 
             props_per_patient = OrderedDict()
-            for p, (unique_classes, all_in_one_region, voxels_per_class, region_volume_per_class) in zip(self.patient_identifiers, res):
+            for p, (unique_classes, all_in_one_region, voxels_per_class, region_volume_per_class) in zip \
+                    (self.patient_identifiers, res):
                 props = dict()
                 props['has_classes'] = unique_classes
                 props['only_one_region'] = all_in_one_region
@@ -120,7 +125,8 @@ class DatasetAnalyzer(object):
         return class_dct, props_per_patient
 
     def get_sizes_and_spacings_after_cropping(self):
-        case_identifiers = get_patient_identifiers_from_cropped_files(self.folder_with_cropped_data) ### ...... ??? do this operation two times???
+        case_identifiers = get_patient_identifiers_from_cropped_files \
+            (self.folder_with_cropped_data) ### ...... ??? do this operation two times???
         sizes = []
         spacings = []
         for c in case_identifiers:
@@ -174,7 +180,8 @@ class DatasetAnalyzer(object):
             results = OrderedDict()
             for mod_id in range(num_modalities):
                 results[mod_id] = OrderedDict()
-                v = p.map(self._get_voxels_in_foreground, zip(self.patient_identifiers, [mod_id] * len(self.patient_identifiers))) # voxel value sampled from foreground data target
+                v = p.map(self._get_voxels_in_foreground, zip(self.patient_identifiers, [mod_id] * len
+                    (self.patient_identifiers))) # voxel value sampled from foreground data target
 
                 w = []
                 for iv in v:
@@ -226,7 +233,8 @@ class DatasetAnalyzer(object):
 
         # collect intensity information
         if collect_intensityproperties:
-            intensityproperties = self.collect_intensity_properties(len(modalities)) # statistic of the whole dataset and statistic of each case in dataset
+            intensityproperties = self.collect_intensity_properties \
+                (len(modalities)) # statistic of the whole dataset and statistic of each case in dataset
         else:
             intensityproperties = None
 

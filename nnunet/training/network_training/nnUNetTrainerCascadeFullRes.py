@@ -11,6 +11,7 @@ from batchgenerators.utilities.file_and_folder_operations import *
 import numpy as np
 from nnunet.utilities.one_hot_encoding import to_one_hot
 import shutil
+
 matplotlib.use("agg")
 
 
@@ -18,7 +19,8 @@ class nnUNetTrainerCascadeFullRes(nnUNetTrainer):
     def __init__(self, plans_file, fold, output_folder=None, dataset_directory=None, batch_dice=True, stage=None,
                  unpack_data=True, deterministic=True, previous_trainer="nnUNetTrainer", fp16=False, network_dims='3d'):
         super(nnUNetTrainerCascadeFullRes, self).__init__(plans_file, fold, output_folder, dataset_directory,
-                                                          batch_dice, stage, unpack_data, deterministic, fp16, network_dims)
+                                                          batch_dice, stage, unpack_data, deterministic, fp16,
+                                                          network_dims)
 
         self.init_args = (plans_file, fold, output_folder, dataset_directory, batch_dice, stage, unpack_data,
                           deterministic, previous_trainer, fp16)
@@ -28,7 +30,8 @@ class nnUNetTrainerCascadeFullRes(nnUNetTrainer):
             plans_identifier = self.output_folder.split("/")[-2].split("__")[-1]
 
             folder_with_segs_prev_stage = join(network_training_output_dir, "3d_lowres",
-                                               task, previous_trainer + "__" + plans_identifier, "pred_next_stage_{}".format(fold))
+                                               task, previous_trainer + "__" + plans_identifier,
+                                               "pred_next_stage_{}".format(fold))
 
             if not isdir(folder_with_segs_prev_stage):
                 raise RuntimeError(
@@ -38,7 +41,9 @@ class nnUNetTrainerCascadeFullRes(nnUNetTrainer):
             # Do not put segs_prev_stage into self.output_folder as we need to unpack them for performance and we
             # don't want to do that in self.output_folder because that one is located on some network drive.
             self.folder_with_segs_from_prev_stage_for_train = join(self.dataset_directory,
-                                                                   "segs_prev_stage_{}".format(fold) if not self.exclusion_mark else "segs_prev_stage_exclusion_{}".format(fold))
+                                                                   "segs_prev_stage_{}".format(
+                                                                       fold) if not self.exclusion_mark else "segs_prev_stage_exclusion_{}".format(
+                                                                       fold))
 
         else:
             self.folder_with_segs_from_prev_stage = None
@@ -49,20 +54,24 @@ class nnUNetTrainerCascadeFullRes(nnUNetTrainer):
         for k in self.dataset_val:
             self.dataset_val[k]['seg_from_prev_stage_file'] = join(self.folder_with_segs_from_prev_stage,
                                                                    k + "_segFromPrevStage.npz")
-            assert isfile(self.dataset_val[k]['seg_from_prev_stage_file']), "seg from prev stage missing: %s" % (self.dataset_val[k]['seg_from_prev_stage_file'])
+            assert isfile(self.dataset_val[k]['seg_from_prev_stage_file']), "seg from prev stage missing: %s" % (
+            self.dataset_val[k]['seg_from_prev_stage_file'])
         for k in self.dataset_tr:
             self.dataset_tr[k]['seg_from_prev_stage_file'] = join(self.folder_with_segs_from_prev_stage,
                                                                   k + "_segFromPrevStage.npz")
-            assert isfile(self.dataset_tr[k]['seg_from_prev_stage_file']), "seg from prev stage missing: %s" % (self.dataset_tr[k]['seg_from_prev_stage_file'])
+            assert isfile(self.dataset_tr[k]['seg_from_prev_stage_file']), "seg from prev stage missing: %s" % (
+            self.dataset_tr[k]['seg_from_prev_stage_file'])
 
     def get_basic_generators(self):
         self.load_dataset()
         self.do_split()
         if self.threeD:
-            dl_tr = DataLoader3D_oversampleJoint(self.dataset_tr, self.basic_generator_patch_size, self.patch_size, self.batch_size,
-                                 True, oversample_foreground_percent=self.oversample_foreground_percent)
-            dl_val = DataLoader3D_oversampleJoint(self.dataset_val, self.patch_size, self.patch_size, self.batch_size, True,
-                                  oversample_foreground_percent=self.oversample_foreground_percent)
+            dl_tr = DataLoader3D_oversampleJoint(self.dataset_tr, self.basic_generator_patch_size, self.patch_size,
+                                                 self.batch_size,
+                                                 True, oversample_foreground_percent=self.oversample_foreground_percent)
+            dl_val = DataLoader3D_oversampleJoint(self.dataset_val, self.patch_size, self.patch_size, self.batch_size,
+                                                  True,
+                                                  oversample_foreground_percent=self.oversample_foreground_percent)
         else:
             raise NotImplementedError
         return dl_tr, dl_val
@@ -141,7 +150,8 @@ class nnUNetTrainerCascadeFullRes(nnUNetTrainer):
                         "will wait all winter for your model to finish!")
 
                 self.tr_gen, self.val_gen = get_default_augmentation(self.dl_tr, self.dl_val,
-                                                                     self.data_aug_params['patch_size_for_spatialtransform'],
+                                                                     self.data_aug_params[
+                                                                         'patch_size_for_spatialtransform'],
                                                                      self.data_aug_params)
                 self.print_to_log_file("TRAINING KEYS:\n %s" % (str(list(self.dataset_tr.keys())[::20])))
                 self.print_to_log_file("VALIDATION KEYS:\n %s" % (str(list(self.dataset_val.keys())[::20])))
@@ -197,13 +207,12 @@ class nnUNetTrainerCascadeFullRes(nnUNetTrainer):
 
             print(k, data.shape)
             data[-1][data[-1] == -1] = 0
-            data_for_net = np.concatenate((data[:self.modalities], to_one_hot(seg_from_prev_stage[0], range(1, self.num_classes))))
+            data_for_net = np.concatenate(
+                (data[:self.modalities], to_one_hot(seg_from_prev_stage[0], range(1, self.num_classes))))
             softmax_pred = self.predict_preprocessed_data_return_softmax(data_for_net, do_mirroring, 1,
                                                                          use_train_mode, 1, mirror_axes, tiled,
                                                                          True, step, self.patch_size,
                                                                          use_gaussian=use_gaussian)
-
-
 
             if transpose_backward is not None:
                 transpose_backward = self.plans.get('transpose_backward')

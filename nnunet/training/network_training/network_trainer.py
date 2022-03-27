@@ -2,6 +2,7 @@ from _warnings import warn
 import matplotlib
 from batchgenerators.utilities.file_and_folder_operations import *
 from sklearn.model_selection import KFold
+
 matplotlib.use("agg")
 from time import time, sleep
 import torch
@@ -93,7 +94,6 @@ class NetworkTrainer(object):
         self.log_file = None
         self.deterministic = deterministic
 
-
     @abstractmethod
     def initialize(self, training=True):
         """
@@ -164,7 +164,8 @@ class NetworkTrainer(object):
             maybe_mkdir_p(self.output_folder)
             timestamp = datetime.now()
             self.log_file = join(self.output_folder, "training_log_%d_%d_%d_%02.0d_%02.0d_%02.0d.txt" %
-                                         (timestamp.year, timestamp.month, timestamp.day, timestamp.hour, timestamp.minute, timestamp.second))
+                                 (timestamp.year, timestamp.month, timestamp.day, timestamp.hour, timestamp.minute,
+                                  timestamp.second))
             with open(self.log_file, 'w') as f:
                 f.write("Starting... \n")
         successful = False
@@ -236,7 +237,7 @@ class NetworkTrainer(object):
     def load_checkpoint(self, fname, train=True):
         self.print_to_log_file("loading checkpoint", fname, "train=", train)
 
-        with open(fname+'.pkl','rb') as f:
+        with open(fname + '.pkl', 'rb') as f:
             a = pkl.load(f)
 
         if not self.was_initialized:
@@ -272,8 +273,8 @@ class NetworkTrainer(object):
             if self.lr_scheduler is not None and not isinstance(self.lr_scheduler, lr_scheduler.ReduceLROnPlateau):
                 self.lr_scheduler.load_state_dict(saved_model['lr_scheduler_state_dict'])
 
-        self.all_tr_losses, self.all_val_losses, self.all_val_losses_tr_mode, self.all_val_eval_metrics = saved_model['plot_stuff']
-
+        self.all_tr_losses, self.all_val_losses, self.all_val_losses_tr_mode, self.all_val_eval_metrics = saved_model[
+            'plot_stuff']
 
     def plot_network_architecture(self):
         """
@@ -286,6 +287,7 @@ class NetworkTrainer(object):
     """
     run training
     """
+
     def run_training(self):
         torch.cuda.empty_cache()
 
@@ -303,9 +305,9 @@ class NetworkTrainer(object):
         if not self.was_initialized:
             self.initialize(True)
 
-        print('~·~'*22, '\n')
+        print('~·~' * 22, '\n')
         print(f'loss function: {self.loss}')
-        print('~·~'*22, '\n')
+        print('~·~' * 22, '\n')
 
         while self.epoch < self.max_num_epochs:
             self.print_to_log_file("\nepoch: ", self.epoch)
@@ -352,7 +354,7 @@ class NetworkTrainer(object):
                 break
 
             self.epoch += 1
-            self.print_to_log_file("This epoch took %f s\n" % (epoch_end_time-epoch_start_time))
+            self.print_to_log_file("This epoch took %f s\n" % (epoch_end_time - epoch_start_time))
 
         self.save_checkpoint(join(self.output_folder, "model_final_checkpoint.model"))
         # now we can delete latest as it will be identical with final
@@ -364,7 +366,7 @@ class NetworkTrainer(object):
     def run_iteration(self, data_generator, do_backprop=True, run_online_evaluation=False):
         data_dict = next(data_generator)
         data = data_dict['data']
-        target = data_dict['target'][:,0:1]
+        target = data_dict['target'][:, 0:1]
         # sdf_heatmap = data_dict['target'][:,1:2]  # if exixts...
         sdf_heatmap = None
         ### sdf ###
@@ -549,7 +551,7 @@ class NetworkTrainer(object):
         return continue_training
 
     def on_epoch_end(self):
-        self.finish_online_evaluation() # does not have to do anything, but can be used to update self.all_val_eval_
+        self.finish_online_evaluation()  # does not have to do anything, but can be used to update self.all_val_eval_
         # metrics
 
         self.plot_progress()
@@ -579,12 +581,9 @@ class NetworkTrainer(object):
         """
         pass
 
-
-
     @abstractmethod
     def validate(self, *args, **kwargs):
         pass
-
 
     def _maybe_init_amp(self):
         # we use fp16 for training only, not inference
@@ -594,7 +593,6 @@ class NetworkTrainer(object):
             else:
                 self.print_to_log_file("WARNING: FP16 training was requested but nvidia apex is not installed. "
                                        "Install it from https://github.com/NVIDIA/apex")
-
 
     def find_lr(self, num_iters=1000, init_value=1e-6, final_value=10., beta=0.98):
         """
@@ -609,7 +607,7 @@ class NetworkTrainer(object):
         ### nvidia apex for torch.half training
         self._maybe_init_amp()
 
-        mult = (final_value / init_value) ** (1/num_iters)
+        mult = (final_value / init_value) ** (1 / num_iters)
         lr = init_value
         self.optimizer.param_groups[0]['lr'] = lr
         avg_loss = 0.
@@ -622,15 +620,15 @@ class NetworkTrainer(object):
             loss = self.run_iteration(self.tr_gen, do_backprop=True, run_online_evaluation=False).data.item() + 1
 
             # Compute the smoothed loss
-            avg_loss = beta * avg_loss + (1-beta) * loss
-            smoothed_loss = avg_loss / (1 - beta**batch_num) ### ??????
+            avg_loss = beta * avg_loss + (1 - beta) * loss
+            smoothed_loss = avg_loss / (1 - beta ** batch_num)  ### ??????
 
             # Stop if the loss is exploding
             if batch_num > 1 and smoothed_loss > 4 * best_loss:
                 break
 
             # Record the best loss
-            if smoothed_loss < best_loss or batch_num==1:
+            if smoothed_loss < best_loss or batch_num == 1:
                 best_loss = smoothed_loss
 
             # Store the values

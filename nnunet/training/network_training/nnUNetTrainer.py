@@ -7,8 +7,10 @@ import torch
 import numpy as np
 from nnunet.utilities.tensor_utilities import sum_tensor
 from torch.optim import lr_scheduler
-from nnunet.training.dataloading.dataset_loading import load_dataset, DataLoader3D, DataLoader2D, unpack_dataset, DataLoader3D_oversampleJoint
-from nnunet.training.loss_functions.dice_loss import DC_and_CE_loss, DC_and_CE_Exclusion_loss, DC_and_CE_Exclusion_loss_DeepS
+from nnunet.training.dataloading.dataset_loading import load_dataset, DataLoader3D, DataLoader2D, unpack_dataset, \
+    DataLoader3D_oversampleJoint
+from nnunet.training.loss_functions.dice_loss import DC_and_CE_loss, DC_and_CE_Exclusion_loss, \
+    DC_and_CE_Exclusion_loss_DeepS
 from nnunet.network_architecture.generic_UNet import Generic_UNet
 from nnunet.network_architecture.initialization import InitWeights_He
 from torch import nn
@@ -21,6 +23,7 @@ from nnunet.evaluation.metrics import ConfusionMatrix
 
 matplotlib.use("agg")
 from collections import OrderedDict
+
 
 class nnUNetTrainer(NetworkTrainer):
     """
@@ -48,6 +51,7 @@ class nnUNetTrainer(NetworkTrainer):
 
 
     """
+
     def __init__(self, plans_file, fold, output_folder=None, dataset_directory=None, batch_dice=True, stage=None,
                  unpack_data=True, deterministic=True, fp16=False, network_dims='3d'):
         """
@@ -83,7 +87,8 @@ class nnUNetTrainer(NetworkTrainer):
         """
         super(nnUNetTrainer, self).__init__(deterministic, fp16)
         self.unpack_data = unpack_data
-        self.init_args = (plans_file, fold, output_folder, dataset_directory, batch_dice, stage, unpack_data, deterministic, fp16)
+        self.init_args = (
+        plans_file, fold, output_folder, dataset_directory, batch_dice, stage, unpack_data, deterministic, fp16)
         self.stage = stage
         self.experiment_name = self.__class__.__name__
         self.plans_file = plans_file
@@ -100,10 +105,10 @@ class nnUNetTrainer(NetworkTrainer):
         self.deep_supervision = True
         self.network_dims = network_dims
         if network_dims == '2d':
-            self.deep_pool_kernal = [[2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2]] # in plans_2D
+            self.deep_pool_kernal = [[2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2], [2, 2]]  # in plans_2D
         else:
             self.deep_pool_kernal = [[1, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]]  # in plans_3D
-        self.DSweights = [1, 0.5, 0.25, 0.1] # weights for different feature level loss
+        self.DSweights = [1, 0.5, 0.25, 0.1]  # weights for different feature level loss
 
         self.plans = None
 
@@ -139,18 +144,19 @@ class nnUNetTrainer(NetworkTrainer):
 
         if self.deep_supervision:
             if self.exclusion_mark:
-                self.loss = DC_and_CE_Exclusion_loss_DeepS({'batch_dice': self.batch_dice, 'smooth': 1e-5, 'do_bg': False, 'weights': self.DSweights},
-                                                           {'weights': self.DSweights},
-                                                           rate=self.ex_rate, deepspool=self.deep_pool_kernal)
+                self.loss = DC_and_CE_Exclusion_loss_DeepS(
+                    {'batch_dice': self.batch_dice, 'smooth': 1e-5, 'do_bg': False, 'weights': self.DSweights},
+                    {'weights': self.DSweights},
+                    rate=self.ex_rate, deepspool=self.deep_pool_kernal)
             else:
                 raise NotImplementedError
         else:
             if self.exclusion_mark:
-                self.loss = DC_and_CE_Exclusion_loss({'batch_dice': self.batch_dice, 'smooth': 1e-5, 'do_bg': False}, {}, rate=self.ex_rate)
+                self.loss = DC_and_CE_Exclusion_loss({'batch_dice': self.batch_dice, 'smooth': 1e-5, 'do_bg': False},
+                                                     {}, rate=self.ex_rate)
             else:
-                self.loss = DC_and_CE_loss({'batch_dice': self.batch_dice, 'smooth': 1e-5, 'do_bg': False, 'square': False}, {})
-
-
+                self.loss = DC_and_CE_loss(
+                    {'batch_dice': self.batch_dice, 'smooth': 1e-5, 'do_bg': False, 'square': False}, {})
 
         self.online_eval_foreground_dc = []
         self.online_eval_tp = []
@@ -177,7 +183,6 @@ class nnUNetTrainer(NetworkTrainer):
         self.weight_decay = 3e-5
 
         self.oversample_foreground_percent = 0.33
-
 
     def update_fold(self, fold):
         """
@@ -210,10 +215,10 @@ class nnUNetTrainer(NetworkTrainer):
                 self.data_aug_params["rotation_x"] = default_2D_augmentation_params["rotation_x"]
         else:
             self.do_dummy_2D_aug = False
-            print('self.patch_size: ',self.patch_size)
+            print('self.patch_size: ', self.patch_size)
             if max(self.patch_size) / min(self.patch_size) > 1.5:
                 default_2D_augmentation_params['rotation_x'] = (-15. / 360 * 2. * np.pi,
-                                                                 15. / 360 * 2. * np.pi)
+                                                                15. / 360 * 2. * np.pi)
             self.data_aug_params = default_2D_augmentation_params
 
         self.data_aug_params["mask_was_used_for_normalization"] = self.use_mask_for_norm
@@ -261,7 +266,8 @@ class nnUNetTrainer(NetworkTrainer):
 
         self.setup_DA_params()
 
-        self.folder_with_preprocessed_data = join(self.dataset_directory, self.plans['data_identifier'] + "_stage%d" % self.stage)
+        self.folder_with_preprocessed_data = join(self.dataset_directory,
+                                                  self.plans['data_identifier'] + "_stage%d" % self.stage)
 
         if training:
             self.dl_tr, self.dl_val = self.get_basic_generators()
@@ -277,11 +283,14 @@ class nnUNetTrainer(NetworkTrainer):
 
             self.tr_gen, self.val_gen = get_default_augmentation(self.dl_tr,
                                                                  self.dl_val,
-                                                                 self.data_aug_params['patch_size_for_spatialtransform'],
+                                                                 self.data_aug_params[
+                                                                     'patch_size_for_spatialtransform'],
                                                                  self.data_aug_params)
 
-            self.print_to_log_file("TRAINING KEYS:\n %s" % (str(list(self.dataset_tr.keys())[::20])), also_print_to_console=True)
-            self.print_to_log_file("VALIDATION KEYS:\n %s" % (str(list(self.dataset_val.keys())[::20])), also_print_to_console=True)
+            self.print_to_log_file("TRAINING KEYS:\n %s" % (str(list(self.dataset_tr.keys())[::20])),
+                                   also_print_to_console=True)
+            self.print_to_log_file("VALIDATION KEYS:\n %s" % (str(list(self.dataset_val.keys())[::20])),
+                                   also_print_to_console=True)
         else:
             pass
 
@@ -377,7 +386,8 @@ class nnUNetTrainer(NetworkTrainer):
         self.net_pool_per_axis = stage_plans['num_pool_per_axis']
         self.patch_size = np.array(stage_plans['patch_size']).astype(int)
         self.do_dummy_2D_aug = stage_plans['do_dummy_2D_data_aug']
-        self.net_num_pool_op_kernel_sizes = stage_plans['pool_op_kernel_sizes'] #[[1, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]]
+        self.net_num_pool_op_kernel_sizes = stage_plans[
+            'pool_op_kernel_sizes']  # [[1, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]]
         self.net_conv_kernel_sizes = stage_plans['conv_kernel_sizes']
 
         self.pad_all_sides = None  # self.patch_size
@@ -385,7 +395,7 @@ class nnUNetTrainer(NetworkTrainer):
         self.normalization_schemes = plans['normalization_schemes']
         self.base_num_features = plans['base_num_features']
 
-        self.num_input_channels = 15 if self.network_dims=='2d' else plans['num_modalities']
+        self.num_input_channels = 15 if self.network_dims == '2d' else plans['num_modalities']
         print(f"self.num_input_channels: {self.num_input_channels}. (we modify 2d model to 2.5d model)")
 
         self.num_classes = plans['num_classes'] + 1  # background is no longer in num_classes
@@ -396,8 +406,9 @@ class nnUNetTrainer(NetworkTrainer):
         self.min_size_per_class = None  # DONT USE THIS. plans['min_size_per_class']
 
         if plans.get('transpose_forward') is None or plans.get('transpose_backward') is None:
-            print("WARNING! You seem to have data that was preprocessed with a previous version of nnU-Net. You should rerun preprocessing. "
-                  "We will proceed and assume that both transpose_foward and transpose_backward are [0, 1, 2]. If that is not correct then weird things will happen!")
+            print(
+                "WARNING! You seem to have data that was preprocessed with a previous version of nnU-Net. You should rerun preprocessing. "
+                "We will proceed and assume that both transpose_foward and transpose_backward are [0, 1, 2]. If that is not correct then weird things will happen!")
             plans['transpose_forward'] = [0, 1, 2]
             plans['transpose_backward'] = [0, 1, 2]
         self.transpose_forward = plans['transpose_forward']
@@ -442,6 +453,7 @@ class nnUNetTrainer(NetworkTrainer):
     """
     run training
     """
+
     def plot_network_architecture(self):
         try:
             from batchgenerators.utilities.file_and_folder_operations import join
@@ -528,6 +540,7 @@ class nnUNetTrainer(NetworkTrainer):
     """
     Validation
     """
+
     def preprocess_predict_nifti(self, input_files, output_file=None, softmax_ouput_file=None):
         """
         Use this to predict new data
@@ -560,7 +573,8 @@ class nnUNetTrainer(NetworkTrainer):
                                              self.transpose_forward, self.intensity_properties)
 
         d, s, properties = preprocessor.preprocess_test_case(input_files,
-                                                             self.plans['plans_per_stage'][self.stage]['current_spacing'])
+                                                             self.plans['plans_per_stage'][self.stage][
+                                                                 'current_spacing'])
         return d, s, properties
 
     def predict_preprocessed_data_return_softmax(self, data, do_mirroring, num_repeats, use_train_mode, batch_size,
@@ -626,7 +640,7 @@ class nnUNetTrainer(NetworkTrainer):
         maybe_mkdir_p(output_folder)
 
         if do_mirroring:
-            mirror_axes = self.data_aug_params['mirror_axes'] ### 默认是没有的，所以你开也白开。。。。。。。。。
+            mirror_axes = self.data_aug_params['mirror_axes']  ### 默认是没有的，所以你开也白开。。。。。。。。。
         else:
             mirror_axes = ()
 
@@ -645,13 +659,13 @@ class nnUNetTrainer(NetworkTrainer):
                 try:
                     data = np.load(self.dataset[k]['data_file'])['data']
                 except Exception as _:
-                    data = np.load(self.dataset[k]['data_file'].replace('.npz','.npy'))
-
+                    data = np.load(self.dataset[k]['data_file'].replace('.npz', '.npy'))
 
                 print(k, data.shape)
                 data[-1][data[-1] == -1] = 0
 
-                softmax_pred = self.predict_preprocessed_data_return_softmax(data[:-1], do_mirroring, 1, use_train_mode, 1,
+                softmax_pred = self.predict_preprocessed_data_return_softmax(data[:-1], do_mirroring, 1, use_train_mode,
+                                                                             1,
                                                                              mirror_axes, tiled, True, step,
                                                                              self.patch_size, use_gaussian=use_gaussian)
 
@@ -717,9 +731,3 @@ class nnUNetTrainer(NetworkTrainer):
             for l in all_labels:
                 global_dice[int(l)] = float(2 * global_tp[l] / (2 * global_tp[l] + global_fn[l] + global_fp[l]))
             write_json(global_dice, join(output_folder, "global_dice.json"))
-
-
-
-
-
-

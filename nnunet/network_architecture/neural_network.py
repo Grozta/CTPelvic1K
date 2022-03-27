@@ -70,7 +70,8 @@ class SegmentationNetwork(NeuralNetwork):
 
         current_mode = self.training
         if use_train_mode is not None and use_train_mode:
-            raise RuntimeError("use_train_mode=True is currently broken! @Fabian needs to fix this (don't put batchnorm layer into train, just dropout)")
+            raise RuntimeError(
+                "use_train_mode=True is currently broken! @Fabian needs to fix this (don't put batchnorm layer into train, just dropout)")
             self.train()
         elif use_train_mode is not None and not use_train_mode:
             self.eval()
@@ -177,7 +178,7 @@ class SegmentationNetwork(NeuralNetwork):
             data = data[None]
 
             if BATCH_SIZE is not None:
-                data = np.vstack([data] * BATCH_SIZE) ### ??? same data ???
+                data = np.vstack([data] * BATCH_SIZE)  ### ??? same data ???
 
             input_size = [1, x.shape[0]] + list(patch_size)
             if not tile_in_z:
@@ -208,10 +209,13 @@ class SegmentationNetwork(NeuralNetwork):
 
             data_shape = data.shape
             center_coord_start = np.array([i // 2 for i in patch_size]).astype(int)
-            center_coord_end = np.array([data_shape[i + 2] - patch_size[i] // 2 for i in range(len(patch_size))]).astype(int)
+            center_coord_end = np.array(
+                [data_shape[i + 2] - patch_size[i] // 2 for i in range(len(patch_size))]).astype(int)
 
-            num_steps = np.ceil([(center_coord_end[i] - center_coord_start[i]) / (patch_size[i] / step) for i in range(3)])
-            step_size = np.array([(center_coord_end[i] - center_coord_start[i]) / (num_steps[i] + 1e-8) for i in range(3)])
+            num_steps = np.ceil(
+                [(center_coord_end[i] - center_coord_start[i]) / (patch_size[i] / step) for i in range(3)])
+            step_size = np.array(
+                [(center_coord_end[i] - center_coord_start[i]) / (num_steps[i] + 1e-8) for i in range(3)])
             step_size[step_size == 0] = 9999999
             xsteps = np.round(np.arange(center_coord_start[0], center_coord_end[0] + 1e-8, step_size[0])).astype(int)
             ysteps = np.round(np.arange(center_coord_start[1], center_coord_end[1] + 1e-8, step_size[1])).astype(int)
@@ -220,7 +224,7 @@ class SegmentationNetwork(NeuralNetwork):
             if all_in_gpu:
                 # some of these can remain in half. We just need the reuslts for softmax so it won't hurt at all to reduce
                 # precision. Inference is of course done in float
-                result = torch.zeros([nb_of_classes] + list(data.shape[2:]), dtype=torch.half).cuda() ### ???
+                result = torch.zeros([nb_of_classes] + list(data.shape[2:]), dtype=torch.half).cuda()  ### ???
                 data = torch.from_numpy(data).cuda(self.get_device())
                 result_numsamples = torch.zeros([nb_of_classes] + list(data.shape[2:]), dtype=torch.half).cuda()
                 add = torch.from_numpy(add).cuda(self.get_device()).float()
@@ -242,8 +246,9 @@ class SegmentationNetwork(NeuralNetwork):
                         ub_z = z + patch_size[2] // 2
 
                         predicted_patch = \
-                        self._internal_maybe_mirror_and_pred_3D(data[:, :, lb_x:ub_x, lb_y:ub_y, lb_z:ub_z],
-                                                                num_repeats, mirror_axes, do_mirroring, add_torch)[0]
+                            self._internal_maybe_mirror_and_pred_3D(data[:, :, lb_x:ub_x, lb_y:ub_y, lb_z:ub_z],
+                                                                    num_repeats, mirror_axes, do_mirroring, add_torch)[
+                                0]
                         if all_in_gpu:
                             predicted_patch = predicted_patch.half()
                         else:
@@ -256,7 +261,8 @@ class SegmentationNetwork(NeuralNetwork):
                         else:
                             result_numsamples[:, lb_x:ub_x, lb_y:ub_y, lb_z:ub_z] += add
 
-            slicer = tuple([slice(0, result.shape[i]) for i in range(len(result.shape) - (len(slicer) - 1))] + slicer[1:])
+            slicer = tuple(
+                [slice(0, result.shape[i]) for i in range(len(result.shape) - (len(slicer) - 1))] + slicer[1:])
             result = result[slicer]
             result_numsamples = result_numsamples[slicer]
 
@@ -299,7 +305,8 @@ class SegmentationNetwork(NeuralNetwork):
 
             stacked = self._internal_maybe_mirror_and_pred_3D(data, num_repeats, mirror_axes, do_mirroring, None)[0]
 
-            slicer = tuple([slice(0, stacked.shape[i]) for i in range(len(stacked.shape) - (len(slicer) - 1))] + slicer[1:])
+            slicer = tuple(
+                [slice(0, stacked.shape[i]) for i in range(len(stacked.shape) - (len(slicer) - 1))] + slicer[1:])
             stacked = stacked[slicer]
             softmax_pred = stacked
 
@@ -344,7 +351,6 @@ class SegmentationNetwork(NeuralNetwork):
                 data_input2D = data[:, s]
                 # print("data_input2D.shape: ",data_input2D.shape)   ### (1,605,605)
 
-
             pred_seg, bayesian_predictions, softmax_pres, uncertainty = \
                 self._internal_predict_2D_2Dconv_tiled(data_input2D, num_repeats, BATCH_SIZE, step, do_mirroring,
                                                        mirror_axes, patch_size, regions_class_order, use_gaussian,
@@ -373,7 +379,6 @@ class SegmentationNetwork(NeuralNetwork):
         predicted_segmentation = np.vstack(predicted_segmentation)
         softmax_pred = np.vstack(softmax_pred).transpose((1, 0, 2, 3))
         return predicted_segmentation, None, softmax_pred, None
-
 
     def _internal_predict_2D_2Dconv_tiled(self, patient_data, num_repeats, BATCH_SIZE=None, step=2,
                                           do_mirroring=True, mirror_axes=(0, 1), patch_size=None,
@@ -419,9 +424,12 @@ class SegmentationNetwork(NeuralNetwork):
 
             data_shape = data.shape
             center_coord_start = np.array([i // 2 for i in patch_size]).astype(int)
-            center_coord_end = np.array([data_shape[i + 2] - patch_size[i] // 2 for i in range(len(patch_size))]).astype(int)
-            num_steps = np.ceil([(center_coord_end[i] - center_coord_start[i]) / (patch_size[i] / step) for i in range(2)])
-            step_size = np.array([(center_coord_end[i] - center_coord_start[i]) / (num_steps[i] + 1e-8) for i in range(2)])
+            center_coord_end = np.array(
+                [data_shape[i + 2] - patch_size[i] // 2 for i in range(len(patch_size))]).astype(int)
+            num_steps = np.ceil(
+                [(center_coord_end[i] - center_coord_start[i]) / (patch_size[i] / step) for i in range(2)])
+            step_size = np.array(
+                [(center_coord_end[i] - center_coord_start[i]) / (num_steps[i] + 1e-8) for i in range(2)])
             step_size[step_size == 0] = 9999999
             xsteps = np.round(np.arange(center_coord_start[0], center_coord_end[0] + 1e-8, step_size[0])).astype(int)
             ysteps = np.round(np.arange(center_coord_start[1], center_coord_end[1] + 1e-8, step_size[1])).astype(int)
@@ -510,7 +518,8 @@ class SegmentationNetwork(NeuralNetwork):
 
             result = self._internal_maybe_mirror_and_pred_2D(data, num_repeats, mirror_axes, do_mirroring)[0]
 
-            slicer = tuple([slice(0, result.shape[i]) for i in range(len(result.shape) - (len(slicer) - 1))] + slicer[1:])
+            slicer = tuple(
+                [slice(0, result.shape[i]) for i in range(len(result.shape) - (len(slicer) - 1))] + slicer[1:])
             result = result[slicer]
             softmax_pred = result
 
@@ -523,14 +532,13 @@ class SegmentationNetwork(NeuralNetwork):
                     predicted_segmentation[softmax_pred[i] > 0.5] = c
         return predicted_segmentation, _, softmax_pred, _
 
-
-
     def _internal_maybe_mirror_and_pred_3D(self, x, num_repeats, mirror_axes, do_mirroring=True, mult=None):
         # everything in here takes place on the GPU. If x and mult are not yet on GPU this will be taken care of here
         # we now return a cuda tensor! Not numpy array!
         with torch.no_grad():
             x = to_cuda(maybe_to_torch(x), gpu_id=self.get_device())
-            result_torch = torch.zeros([1, self.num_classes] + list(x.shape[2:]), dtype=torch.float).cuda(self.get_device(), non_blocking=True)
+            result_torch = torch.zeros([1, self.num_classes] + list(x.shape[2:]), dtype=torch.float).cuda(
+                self.get_device(), non_blocking=True)
             mult = to_cuda(maybe_to_torch(mult), gpu_id=self.get_device())
 
             num_results = num_repeats
@@ -630,9 +638,6 @@ class SegmentationNetwork(NeuralNetwork):
 
         return result_torch
 
-
-
-
     def predict_3D_pseudo3D_2Dconv(self, data, do_mirroring, num_repeats, min_size=None, BATCH_SIZE=None,
                                    mirror_axes=(0, 1), regions_class_order=None, pseudo3D_slices=5, all_in_gpu=False):
         if all_in_gpu:
@@ -658,8 +663,3 @@ class SegmentationNetwork(NeuralNetwork):
         softmax_pred = np.vstack(softmax_pred).transpose((1, 0, 2, 3))
 
         return predicted_segmentation, None, softmax_pred, None
-
-
-
-
-

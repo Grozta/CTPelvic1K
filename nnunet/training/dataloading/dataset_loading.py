@@ -2,10 +2,13 @@ from collections import OrderedDict
 from batchgenerators.augmentations.utils import random_crop_2D_image_batched, pad_nd_image
 import numpy as np
 import pickle as pkl
-from batchgenerators.dataloading import SlimDataLoaderBase
+# from batchgenerators.dataloading import SlimDataLoaderBase
+from batchgenerators.dataloading.data_loader import SlimDataLoaderBase
 from multiprocessing import Pool
 # from nnunet.paths import preprocessing_output_dir
 from batchgenerators.utilities.file_and_folder_operations import *
+from tqdm import tqdm
+
 
 def augment_mirroring(sample_data, sample_seg=None, axes=(0, 1, 2)):
     if (len(sample_data.shape) != 3) and (len(sample_data.shape) != 4):
@@ -33,23 +36,23 @@ def augment_mirroring(sample_data, sample_seg=None, axes=(0, 1, 2)):
                 sample_seg[:, :, :, :] = sample_seg[:, :, :, ::-1]
         idx += 1
 
-
-    if sample_seg is not None and idx % 2==1:
-        sample_seg[sample_seg==2] = 10
-        sample_seg[sample_seg==3] = 2
-        sample_seg[sample_seg==10] = 3
+    if sample_seg is not None and idx % 2 == 1:
+        sample_seg[sample_seg == 2] = 10
+        sample_seg[sample_seg == 3] = 2
+        sample_seg[sample_seg == 10] = 3
 
     del idx
 
     return sample_data, sample_seg
 
+
 def mirror_aug_in_dataloading(data, seg):
     """
     array.shape = (b, 1, h, w)
     """
-    if len(data.shape)==5:
+    if len(data.shape) == 5:
         axes = (0, 1, 2)
-    elif len(data.shape)==4:
+    elif len(data.shape) == 4:
         axes = (0, 1)
 
     new_data = []
@@ -66,15 +69,18 @@ def mirror_aug_in_dataloading(data, seg):
 
 
 def get_case_identifiers(folder):
-    if len([i for i in os.listdir(folder) if i.endswith("npz")])>0:
-        case_identifiers = [i[:-4] for i in os.listdir(folder) if i.endswith("npz") and (i.find("segFromPrevStage") == -1)]
-    elif len([i for i in os.listdir(folder) if i.endswith("npy")])>0:
-        case_identifiers = [i[:-4] for i in os.listdir(folder) if i.endswith("npy") and (i.find("segFromPrevStage") == -1)]
+    if len([i for i in os.listdir(folder) if i.endswith("npz")]) > 0:
+        case_identifiers = [i[:-4] for i in os.listdir(folder) if
+                            i.endswith("npz") and (i.find("segFromPrevStage") == -1)]
+    elif len([i for i in os.listdir(folder) if i.endswith("npy")]) > 0:
+        case_identifiers = [i[:-4] for i in os.listdir(folder) if
+                            i.endswith("npy") and (i.find("segFromPrevStage") == -1)]
     return case_identifiers
 
 
 def get_case_identifiers_from_raw_folder(folder):
-    case_identifiers = np.unique([i[:-12] for i in os.listdir(folder) if i.endswith(".nii.gz") and (i.find("segFromPrevStage") == -1)])
+    case_identifiers = np.unique(
+        [i[:-12] for i in os.listdir(folder) if i.endswith(".nii.gz") and (i.find("segFromPrevStage") == -1)])
     return case_identifiers
 
 
@@ -109,7 +115,7 @@ def unpack_dataset(folder, threads=48, key="data"):
     """
     p = Pool(threads)
     npz_files = subfiles(folder, True, None, ".npz", True)
-    p.map(convert_to_npy, zip(npz_files, [key]*len(npz_files)))
+    p.map(convert_to_npy, zip(npz_files, [key] * len(npz_files)))
     p.close()
     p.join()
 
@@ -117,14 +123,14 @@ def unpack_dataset(folder, threads=48, key="data"):
 def pack_dataset(folder, threads=8, key="data"):
     p = Pool(threads)
     npy_files = subfiles(folder, True, None, ".npy", True)
-    p.map(save_as_npz, zip(npy_files, [key]*len(npy_files)))
+    p.map(save_as_npz, zip(npy_files, [key] * len(npy_files)))
     p.close()
     p.join()
 
 
 def delete_npy(folder):
     case_identifiers = get_case_identifiers(folder)
-    npy_files = [join(folder, i+".npy") for i in case_identifiers]
+    npy_files = [join(folder, i + ".npy") for i in case_identifiers]
     npy_files = [i for i in npy_files if isfile(i)]
     for n in npy_files:
         os.remove(n)
@@ -137,11 +143,11 @@ def load_dataset(folder):
     print(f"there are {len(case_identifiers)} cases in {folder}")
     for c in case_identifiers:
         dataset[c] = OrderedDict()
-        dataset[c]['data_file'] = join(folder, "%s.npz"%c)
-        with open(join(folder, "%s.pkl"%c), 'rb') as f:
+        dataset[c]['data_file'] = join(folder, "%s.npz" % c)
+        with open(join(folder, "%s.pkl" % c), 'rb') as f:
             dataset[c]['properties'] = pickle.load(f)
         if dataset[c].get('seg_from_prev_stage_file') is not None:
-            dataset[c]['seg_from_prev_stage_file'] = join(folder, "%s_segs.npz"%c)
+            dataset[c]['seg_from_prev_stage_file'] = join(folder, "%s_segs.npz" % c)
     return dataset
 
 
@@ -183,11 +189,14 @@ def crop_2D_image_force_fg(img, crop_size, force_class=None):
 
     selected_center_voxel = np.array(selected_center_voxel)
     for i in range(2):
-        selected_center_voxel[i] = max(crop_size[i]//2, selected_center_voxel[i])
-        selected_center_voxel[i] = min(img.shape[i+1] - crop_size[i]//2 - crop_size[i] % 2, selected_center_voxel[i])
+        selected_center_voxel[i] = max(crop_size[i] // 2, selected_center_voxel[i])
+        selected_center_voxel[i] = min(img.shape[i + 1] - crop_size[i] // 2 - crop_size[i] % 2,
+                                       selected_center_voxel[i])
 
-    result = img[:, (selected_center_voxel[0] - crop_size[0]//2):(selected_center_voxel[0] + crop_size[0]//2 + crop_size[0] % 2),
-             (selected_center_voxel[1] - crop_size[1]//2):(selected_center_voxel[1] + crop_size[1]//2 + crop_size[1] % 2)]
+    result = img[:, (selected_center_voxel[0] - crop_size[0] // 2):(
+                selected_center_voxel[0] + crop_size[0] // 2 + crop_size[0] % 2),
+             (selected_center_voxel[1] - crop_size[1] // 2):(
+                         selected_center_voxel[1] + crop_size[1] // 2 + crop_size[1] % 2)]
     return result
 
 
@@ -268,7 +277,7 @@ class DataLoader3D(SlimDataLoaderBase):
                     segs_from_previous_stage = np.load(self._data[i]['seg_from_prev_stage_file'])['data'][None]
 
                 seg_key = np.random.choice(segs_from_previous_stage.shape[0])
-                seg_from_previous_stage = segs_from_previous_stage[seg_key:seg_key+1]
+                seg_from_previous_stage = segs_from_previous_stage[seg_key:seg_key + 1]
                 assert all([i == j for i, j in zip(seg_from_previous_stage.shape[1:], case_all_data.shape[1:])]), \
                     "seg_from_previous_stage does not match the shape of case_all_data: %s vs %s" % \
                     (str(seg_from_previous_stage.shape[1:]), str(case_all_data.shape[1:]))
@@ -277,8 +286,8 @@ class DataLoader3D(SlimDataLoaderBase):
 
             need_to_pad = self.need_to_pad
             for d in range(3):
-                if need_to_pad[d] + case_all_data.shape[d+1] < self.patch_size[d]:
-                    need_to_pad[d] = self.patch_size[d] - case_all_data.shape[d+1]
+                if need_to_pad[d] + case_all_data.shape[d + 1] < self.patch_size[d]:
+                    need_to_pad[d] = self.patch_size[d] - case_all_data.shape[d + 1]
 
             shape = case_all_data.shape[1:]
             lb_x = - need_to_pad[0] // 2
@@ -340,29 +349,32 @@ class DataLoader3D(SlimDataLoaderBase):
             # remove label -1 in the data augmentation but this way it is less error prone)
 
             case_all_data = case_all_data[:, valid_bbox_x_lb:valid_bbox_x_ub,
-                                             valid_bbox_y_lb:valid_bbox_y_ub,
-                                             valid_bbox_z_lb:valid_bbox_z_ub]
+                            valid_bbox_y_lb:valid_bbox_y_ub,
+                            valid_bbox_z_lb:valid_bbox_z_ub]
             if seg_from_previous_stage is not None:
                 seg_from_previous_stage = seg_from_previous_stage[:, valid_bbox_x_lb:valid_bbox_x_ub,
-                                                                     valid_bbox_y_lb:valid_bbox_y_ub,
-                                                                     valid_bbox_z_lb:valid_bbox_z_ub]
+                                          valid_bbox_y_lb:valid_bbox_y_ub,
+                                          valid_bbox_z_lb:valid_bbox_z_ub]
 
-            case_all_data_donly = np.pad(case_all_data[:-1], ((0,0),
+            case_all_data_donly = np.pad(case_all_data[:-1], ((0, 0),
                                                               (-min(0, bbox_x_lb), max(bbox_x_ub - shape[0], 0)),
                                                               (-min(0, bbox_y_lb), max(bbox_y_ub - shape[1], 0)),
                                                               (-min(0, bbox_z_lb), max(bbox_z_ub - shape[2], 0))),
                                          self.pad_mode, **self.pad_kwargs_data)
 
-            case_all_data_segonly = np.pad(case_all_data[-1:], ((0,0),
-                                                              (-min(0, bbox_x_lb), max(bbox_x_ub - shape[0], 0)),
-                                                              (-min(0, bbox_y_lb), max(bbox_y_ub - shape[1], 0)),
-                                                              (-min(0, bbox_z_lb), max(bbox_z_ub - shape[2], 0))),
-                                         'constant', **{'constant_values':-1})
+            case_all_data_segonly = np.pad(case_all_data[-1:], ((0, 0),
+                                                                (-min(0, bbox_x_lb), max(bbox_x_ub - shape[0], 0)),
+                                                                (-min(0, bbox_y_lb), max(bbox_y_ub - shape[1], 0)),
+                                                                (-min(0, bbox_z_lb), max(bbox_z_ub - shape[2], 0))),
+                                           'constant', **{'constant_values': -1})
             if seg_from_previous_stage is not None:
-                seg_from_previous_stage = np.pad(seg_from_previous_stage, ((0,0),
-                                                              (-min(0, bbox_x_lb), max(bbox_x_ub - shape[0], 0)),
-                                                              (-min(0, bbox_y_lb), max(bbox_y_ub - shape[1], 0)),
-                                                              (-min(0, bbox_z_lb), max(bbox_z_ub - shape[2], 0))),
+                seg_from_previous_stage = np.pad(seg_from_previous_stage, ((0, 0),
+                                                                           (-min(0, bbox_x_lb),
+                                                                            max(bbox_x_ub - shape[0], 0)),
+                                                                           (-min(0, bbox_y_lb),
+                                                                            max(bbox_y_ub - shape[1], 0)),
+                                                                           (-min(0, bbox_z_lb),
+                                                                            max(bbox_z_ub - shape[2], 0))),
                                                  'constant', **{'constant_values': 0})
                 case_all_data_segonly = np.concatenate((case_all_data_segonly, seg_from_previous_stage), 0)
 
@@ -372,7 +384,7 @@ class DataLoader3D(SlimDataLoaderBase):
         data = np.vstack(data)
         seg = np.vstack(seg)
 
-        return {'data':data, 'seg':seg, 'properties':case_properties, 'keys': selected_keys}
+        return {'data': data, 'seg': seg, 'properties': case_properties, 'keys': selected_keys}
 
 
 class DataLoader2D(SlimDataLoaderBase):
@@ -410,7 +422,8 @@ class DataLoader2D(SlimDataLoaderBase):
         self.patch_size = patch_size
         self.final_patch_size = final_patch_size
         if transpose is not None:
-            assert isinstance(transpose, (list, tuple)), "Transpose must be either None or be a tuple/list representing the new axis order (3 ints)"
+            assert isinstance(transpose, (
+            list, tuple)), "Transpose must be either None or be a tuple/list representing the new axis order (3 ints)"
         self.transpose = transpose
         self.need_to_pad = np.array(patch_size) - np.array(final_patch_size)
 
@@ -444,7 +457,7 @@ class DataLoader2D(SlimDataLoaderBase):
         return not batch_idx < round(self.batch_size * (1 - self.oversample_foreground_percent))
 
     def generate_train_batch(self):
-        selected_keys = np.random.choice(self.list_of_keys, self.batch_size, True, None) ### Allow duplicates(name)
+        selected_keys = np.random.choice(self.list_of_keys, self.batch_size, True, None)  ### Allow duplicates(name)
         data = []
         seg = []
         case_properties = []
@@ -457,7 +470,8 @@ class DataLoader2D(SlimDataLoaderBase):
             else:
                 force_fg = False
 
-            if not isfile(self._data[i]['data_file'][:-4] + ".npy"): # "data_file", "properties", ["seg_from_prev_stage_file"]
+            if not isfile(self._data[i]['data_file'][
+                          :-4] + ".npy"):  # "data_file", "properties", ["seg_from_prev_stage_file"]
                 case_all_data = np.load(self._data[i]['data_file'][:-4] + ".npz")['data']
             else:
                 case_all_data = np.load(self._data[i]['data_file'][:-4] + ".npy", self.memmap_mode)
@@ -465,8 +479,7 @@ class DataLoader2D(SlimDataLoaderBase):
             if len(case_all_data.shape) == 3:
                 case_all_data = case_all_data[:, None]
 
-
-            if self.transpose is not None: #### !!!!! todo:
+            if self.transpose is not None:  #### !!!!! todo:
                 leading_axis = self.transpose[0]
             else:
                 leading_axis = 0
@@ -475,7 +488,8 @@ class DataLoader2D(SlimDataLoaderBase):
                 random_slice = np.random.choice(case_all_data.shape[leading_axis + 1])
             else:
                 classes_in_slice_per_axis = properties.get("classes_in_slice_per_axis")
-                possible_classes = np.unique(properties['classes'])  ### array([-1.,  0.,  1.,  2.,  3.,  4.], dtype=float32)
+                possible_classes = np.unique(
+                    properties['classes'])  ### array([-1.,  0.,  1.,  2.,  3.,  4.], dtype=float32)
                 possible_classes = possible_classes[possible_classes > 0]  ### array([1., 2., 3., 4.], dtype=float32)
                 if len(possible_classes) > 0 and not (0 in possible_classes.shape):
                     selected_class = np.random.choice(possible_classes)
@@ -485,7 +499,8 @@ class DataLoader2D(SlimDataLoaderBase):
                 if classes_in_slice_per_axis is not None:
                     valid_slices = classes_in_slice_per_axis[leading_axis][selected_class]
                 else:
-                    valid_slices = np.where(np.sum(case_all_data[-1] == selected_class, axis=[i for i in range(3) if i != leading_axis]))[0]
+                    valid_slices = np.where(
+                        np.sum(case_all_data[-1] == selected_class, axis=[i for i in range(3) if i != leading_axis]))[0]
                 if len(valid_slices) != 0:
                     random_slice = np.random.choice(valid_slices)
                 else:
@@ -501,13 +516,14 @@ class DataLoader2D(SlimDataLoaderBase):
                 if self.transpose is not None and self.transpose[1] > self.transpose[2]:
                     case_all_data = case_all_data.transpose(0, 2, 1)
             else:
-                assert leading_axis == 0, "pseudo_3d_slices works only without transpose for now!" # ...Fine... liupengbo-20200621
+                assert leading_axis == 0, "pseudo_3d_slices works only without transpose for now!"  # ...Fine... liupengbo-20200621
                 mn = random_slice - (self.pseudo_3d_slices - 1) // 2
                 mx = random_slice + (self.pseudo_3d_slices - 1) // 2 + 1
                 valid_mn = max(mn, 0)
                 valid_mx = min(mx, case_all_data.shape[1])
 
-                case_all_seg = case_all_data[-1:]  ### this way of writing will keep dims of array### there also restrict the default number of channel
+                case_all_seg = case_all_data[
+                               -1:]  ### this way of writing will keep dims of array### there also restrict the default number of channel
                 case_all_data = case_all_data[:-1]
 
                 case_all_data = case_all_data[:, valid_mn:valid_mx]
@@ -526,7 +542,7 @@ class DataLoader2D(SlimDataLoaderBase):
                 case_all_data = case_all_data.reshape((-1, case_all_data.shape[-2], case_all_data.shape[-1]))
                 case_all_data = np.concatenate((case_all_data, case_all_seg), 0)
 
-            num_seg = 1 ###
+            num_seg = 1  ###
             # why we need this is a little complicated. It has to do with downstream random cropping during data
             # augmentation. Basically we will rotate the patch and then to a center crop of size self.final_patch_size.
             # Depending on the rotation, scaling and elastic deformation parameters, self.patch_size has to be large
@@ -541,8 +557,10 @@ class DataLoader2D(SlimDataLoaderBase):
                     new_shp = np.max(
                         np.vstack((np.array(case_all_data.shape[1:])[None], np.array(self.patch_size)[None])), 0)
             if new_shp is not None:
-                case_all_data_donly = pad_nd_image(case_all_data[:-num_seg], new_shp, self.pad_mode, kwargs=self.pad_kwargs_data)
-                case_all_data_segnonly = pad_nd_image(case_all_data[-num_seg:], new_shp, 'constant', kwargs={'constant_values':-1})
+                case_all_data_donly = pad_nd_image(case_all_data[:-num_seg], new_shp, self.pad_mode,
+                                                   kwargs=self.pad_kwargs_data)
+                case_all_data_segnonly = pad_nd_image(case_all_data[-num_seg:], new_shp, 'constant',
+                                                      kwargs={'constant_values': -1})
                 case_all_data = np.vstack((case_all_data_donly, case_all_data_segnonly))[None]
             else:
                 case_all_data = case_all_data[None]
@@ -559,17 +577,18 @@ class DataLoader2D(SlimDataLoaderBase):
         seg = np.vstack(seg)
         keys = selected_keys
 
-        return {'data':data, 'seg':seg, 'properties':case_properties, "keys": keys}
+        return {'data': data, 'seg': seg, 'properties': case_properties, "keys": keys}
 
 
 class DataLoader3D_oversampleJoint(DataLoader3D):
     def __init__(self, data, patch_size, final_patch_size, batch_size, has_prev_stage=False,
                  oversample_foreground_percent=0.0, memmap_mode="r", pad_mode="edge", pad_kwargs_data=None,
                  pad_sides=None):
-        super(DataLoader3D_oversampleJoint, self).__init__(data, patch_size, final_patch_size, batch_size, has_prev_stage,
-                                                       oversample_foreground_percent, memmap_mode, pad_mode,
-                                                       pad_kwargs_data,
-                                                       pad_sides)
+        super(DataLoader3D_oversampleJoint, self).__init__(data, patch_size, final_patch_size, batch_size,
+                                                           has_prev_stage,
+                                                           oversample_foreground_percent, memmap_mode, pad_mode,
+                                                           pad_kwargs_data,
+                                                           pad_sides)
 
     def generate_train_batch(self):
         selected_keys = np.random.choice(self.list_of_keys, self.batch_size, True, None)
@@ -610,10 +629,10 @@ class DataLoader3D_oversampleJoint(DataLoader3D):
             shape = case_all_data.shape[1:]
 
             with open(self._data[i]['data_file'][:-4] + ".pkl", 'rb') as f:
-                reasonable_crops = pkl.load(f)['Lumbosacral_Region'] # generated by lumbosacral_joint_sampling.py
+                reasonable_crops = pkl.load(f)['Lumbosacral_Region']  # generated by lumbosacral_joint_sampling.py
 
             if not force_fg:
-                if np.random.rand()<0.5:
+                if np.random.rand() < 0.5:
                     lb_x = - need_to_pad[0] // 2
                     ub_x = shape[0] + need_to_pad[0] // 2 + need_to_pad[0] % 2 - self.patch_size[0]
                     lb_y = - need_to_pad[1] // 2
@@ -639,11 +658,11 @@ class DataLoader3D_oversampleJoint(DataLoader3D):
 
                 voxels_of_that_class = np.argwhere(case_all_data[-1] == selected_class)
                 index_of_that_class = np.where((voxels_of_that_class[:, 0] > reasonable_crops[0][0]) & (
-                            voxels_of_that_class[:, 0] < reasonable_crops[0][1]) &
+                        voxels_of_that_class[:, 0] < reasonable_crops[0][1]) &
                                                (voxels_of_that_class[:, 1] > reasonable_crops[1][0]) & (
-                                                           voxels_of_that_class[:, 1] < reasonable_crops[1][1]) &
+                                                       voxels_of_that_class[:, 1] < reasonable_crops[1][1]) &
                                                (voxels_of_that_class[:, 2] > reasonable_crops[2][0]) & (
-                                                           voxels_of_that_class[:, 2] < reasonable_crops[2][1]))[0]
+                                                       voxels_of_that_class[:, 2] < reasonable_crops[2][1]))[0]
 
                 # voxels_of_that_class should always contain some voxels we chose selected_class from the classes that
                 # are actually present in the case. There is however one slight chance that foreground_classes includes

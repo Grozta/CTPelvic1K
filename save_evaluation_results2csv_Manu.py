@@ -4,12 +4,13 @@ import numpy as np
 import shutil
 import os
 
+
 def func():
     fold = 21
     base_dir = os.environ['HOME']
     eval_reslult_pkl_path = base_dir + '/all_data/nnUNet/rawdata/ipcai2021_M_Test/' \
-                            f'Task22_ipcai2021_T__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__fold{fold}_3dcascadefullres_pred/' \
-                            'evaluation_oldsdf_0.25__2000_False.pkl'
+                                       f'Task22_ipcai2021_T__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__fold{fold}_3dcascadefullres_pred/' \
+                                       'evaluation_oldsdf_0.25__2000_False.pkl'
 
     names_M = base_dir + '/all_data/nnUNet/nnUNet_processed/Task22_ipcai2021/splits_final.pkl'
 
@@ -116,6 +117,6 @@ def func():
         save_csv_path = eval_reslult_pkl_path.replace('.pkl', '_{}.csv'.format(manu))
         results_pd.to_csv(save_csv_path)
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     func()

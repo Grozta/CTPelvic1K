@@ -1,5 +1,3 @@
-
-
 import shutil
 from nnunet.experiment_planning.experiment_planner_baseline_3DUNet import ExperimentPlanner
 from nnunet.experiment_planning.plan_and_preprocess_task import create_lists_from_splitted_dataset
@@ -23,14 +21,14 @@ class ExperimentPlanner2D(ExperimentPlanner):
 
         def get_properties_for_stage(current_spacing, original_spacing, original_shape, num_cases,
                                      num_modalities, num_classes):
-
             new_median_shape = np.round(original_spacing / current_spacing * original_shape).astype(int)
 
             dataset_num_voxels = np.prod(new_median_shape, dtype=np.int64) * num_cases
             input_patch_size = new_median_shape[1:]
 
             network_numpool, net_pool_kernel_sizes, net_conv_kernel_sizes, input_patch_size, shape_must_be_divisible_by = \
-                get_pool_and_conv_props(current_spacing[1:], input_patch_size, FEATUREMAP_MIN_EDGE_LENGTH_BOTTLENECK, Generic_UNet.MAX_NUMPOOL_2D)
+                get_pool_and_conv_props(current_spacing[1:], input_patch_size, FEATUREMAP_MIN_EDGE_LENGTH_BOTTLENECK,
+                                        Generic_UNet.MAX_NUMPOOL_2D)
 
             estimated_gpu_ram_consumption = Generic_UNet.compute_approx_vram_consumption(input_patch_size,
                                                                                          network_numpool,
@@ -75,14 +73,13 @@ class ExperimentPlanner2D(ExperimentPlanner):
         target_spacing = self.get_target_spacing()
         new_shapes = np.array([np.array(i) / target_spacing * np.array(j) for i, j in zip(spacings, sizes)])
 
-
         ## CHANGE BY PENGBOLIU
         # max_spacing_axis = np.argmax(target_spacing)
         # remaining_axes = [i for i in list(range(3)) if i != max_spacing_axis]
         # self.transpose_forward = [max_spacing_axis] + remaining_axes
         # self.transpose_backward = [np.argwhere(np.array(self.transpose_forward) == i)[0][0] for i in range(3)]
-        self.transpose_forward = [0, 1, 2] # We lock the transpose forward and backward in our exeriment,
-                                            # because some data in our dataset has a higher resolution in the depth dimension.
+        self.transpose_forward = [0, 1, 2]  # We lock the transpose forward and backward in our exeriment,
+        # because some data in our dataset has a higher resolution in the depth dimension.
         self.transpose_backward = [0, 1, 2]
 
         # we base our calculations on the median shape of the datasets
@@ -157,6 +154,7 @@ class ExperimentPlanner2D(ExperimentPlanner):
         preprocessor.run(target_spacings, self.folder_with_cropped_data, self.preprocessed_output_folder,
                          self.plans['data_identifier'], num_threads)
 
+
 if __name__ == "__main__":
     t = "Task14_BoneSegmentation"
 
@@ -172,7 +170,6 @@ if __name__ == "__main__":
         threads = 6
     else:
         threads = 8
-
 
     exp_planner = ExperimentPlanner2D(cropped_out_dir, preprocessing_output_dir_this_task, threads)
     exp_planner.plan_experiment()

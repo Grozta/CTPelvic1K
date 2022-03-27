@@ -7,6 +7,7 @@ import time
 import os
 import cv2
 
+
 def sdf_func(segImg, name):
     """
     segImg is a sitk Image
@@ -17,9 +18,10 @@ def sdf_func(segImg, name):
     seg = sitk.GetArrayFromImage(Sdf)
     # seg[seg > 0.4999] = 1  # convert sdf back to numpy array, and clip 0.5 above to 1 (inside)
     # heat_map = seg + 0.5  # putGaussianMapF(mask, sigma=50.0)
-    seg = (seg-seg.min())/(seg.max()-seg.min())
+    seg = (seg - seg.min()) / (seg.max() - seg.min())
     print(name, seg.shape, seg.max(), seg.min())
-    return seg#heat_map
+    return seg  # heat_map
+
 
 def gatherfiles(path, prefix=None, midfix=None, postfix=None, extname=True):
     files = os.listdir(path)
@@ -34,6 +36,7 @@ def gatherfiles(path, prefix=None, midfix=None, postfix=None, extname=True):
     else:
         files = [os.path.splitext(i)[0] for i in files]
         return files
+
 
 def load_pkl(file):
     with open(file, 'rb') as f:

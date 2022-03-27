@@ -42,7 +42,7 @@ def resample_patient(data, seg, original_spacing, target_spacing, order_data=3, 
     if seg is not None:
         assert len(seg.shape) == 4, "seg must be c x y z"
 
-    if data is not None:        ### ...shit code
+    if data is not None:  ### ...shit code
         shape = np.array(data[0].shape)
     else:
         shape = np.array(seg[0].shape)
@@ -170,7 +170,8 @@ def resample_data_or_seg(data, new_shape, is_seg, axis=None, order=3, do_separat
 
 
 class GenericPreprocessor(object):
-    def __init__(self, normalization_scheme_per_modality, use_nonzero_mask, transpose_forward: (tuple, list), intensityproperties=None):
+    def __init__(self, normalization_scheme_per_modality, use_nonzero_mask, transpose_forward: (tuple, list),
+                 intensityproperties=None):
         """
 
         :param normalization_scheme_per_modality: dict {0:'nonCT'}
@@ -291,9 +292,9 @@ class GenericPreprocessor(object):
 
         all_data = np.vstack((data, seg)).astype(np.float32)
 
-
         print("saving: ", os.path.join(output_folder_stage, "%s.npz" % case_identifier))
-        np.savez_compressed(os.path.join(output_folder_stage, "%s.npz" % case_identifier), data=all_data.astype(np.float32))
+        np.savez_compressed(os.path.join(output_folder_stage, "%s.npz" % case_identifier),
+                            data=all_data.astype(np.float32))
         with open(os.path.join(output_folder_stage, "%s.pkl" % case_identifier), 'wb') as f:
             pickle.dump(properties, f)
 
@@ -314,7 +315,7 @@ class GenericPreprocessor(object):
         list_of_cropped_npz_files = subfiles(input_folder_with_cropped_npz, True, None, ".npz", True)
         maybe_mkdir_p(output_folder)
         num_stages = len(target_spacings)
-        if not isinstance(num_threads, (list, tuple, np.ndarray)):   ### ??? should be a list of tuple or list here...
+        if not isinstance(num_threads, (list, tuple, np.ndarray)):  ### ??? should be a list of tuple or list here...
             num_threads = [num_threads] * num_stages
 
         assert len(num_threads) == num_stages
@@ -335,9 +336,11 @@ class GenericPreprocessor(object):
 
 
 class PreprocessorFor2D(GenericPreprocessor):
-    def __init__(self, normalization_scheme_per_modality, use_nonzero_mask, transpose_forward: (tuple, list), intensityproperties=None):
+    def __init__(self, normalization_scheme_per_modality, use_nonzero_mask, transpose_forward: (tuple, list),
+                 intensityproperties=None):
 
-        super(PreprocessorFor2D, self).__init__(normalization_scheme_per_modality, use_nonzero_mask, transpose_forward, intensityproperties)
+        super(PreprocessorFor2D, self).__init__(normalization_scheme_per_modality, use_nonzero_mask, transpose_forward,
+                                                intensityproperties)
 
     def run(self, target_spacings, input_folder_with_cropped_npz, output_folder, data_identifier,
             num_threads=8, force_separate_z=None):

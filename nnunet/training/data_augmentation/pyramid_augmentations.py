@@ -1,8 +1,12 @@
 from copy import deepcopy
+
+from batchgenerators.transforms.abstract_transforms import AbstractTransform
 from skimage.morphology import label, ball
 from skimage.morphology.binary import binary_erosion, binary_dilation, binary_closing, binary_opening
 import numpy as np
-from batchgenerators.transforms import AbstractTransform
+
+
+# from batchgenerators.transforms import AbstractTransform
 
 
 class RemoveRandomConnectedComponentFromOneHotEncodingTransform(AbstractTransform):
@@ -35,9 +39,10 @@ class RemoveRandomConnectedComponentFromOneHotEncodingTransform(AbstractTransfor
                         for i in range(1, num_comp + 1):
                             component_ids.append(i)
                             component_sizes.append(np.sum(lab == i))
-                        component_ids = [i for i, j in zip(component_ids, component_sizes) if j < num_voxels*self.dont_do_if_covers_more_than_X_percent]
-                        #_ = component_ids.pop(np.argmax(component_sizes))
-                        #else:
+                        component_ids = [i for i, j in zip(component_ids, component_sizes) if
+                                         j < num_voxels * self.dont_do_if_covers_more_than_X_percent]
+                        # _ = component_ids.pop(np.argmax(component_sizes))
+                        # else:
                         #    component_ids = list(range(1, num_comp + 1))
                         if len(component_ids) > 0:
                             random_component = np.random.choice(component_ids)
@@ -62,7 +67,7 @@ class MoveSegAsOneHotToData(AbstractTransform):
     def __call__(self, **data_dict):
         origin = data_dict.get(self.key_origin)
         target = data_dict.get(self.key_target)
-        seg = origin[:, self.channel_id:self.channel_id+1]
+        seg = origin[:, self.channel_id:self.channel_id + 1]
         seg_onehot = np.zeros((seg.shape[0], len(self.all_seg_labels), *seg.shape[2:]), dtype=seg.dtype)
         for i, l in enumerate(self.all_seg_labels):
             seg_onehot[:, i][seg[:, 0] == l] = 1
@@ -78,7 +83,8 @@ class MoveSegAsOneHotToData(AbstractTransform):
 
 
 class ApplyRandomBinaryOperatorTransform(AbstractTransform):
-    def __init__(self, channel_idx, p_per_sample=0.3, any_of_these=(binary_dilation, binary_erosion, binary_closing, binary_opening),
+    def __init__(self, channel_idx, p_per_sample=0.3,
+                 any_of_these=(binary_dilation, binary_erosion, binary_closing, binary_opening),
                  key="data", strel_size=(1, 10)):
         """
 
@@ -125,10 +131,12 @@ class ApplyRandomBinaryOperatorTransform(AbstractTransform):
         data_dict[self.key] = data
         return data_dict
 
+
 class MoveLastFewDataToSeg_pbl(AbstractTransform):
     """
     used when there introduce other channel data. like contour, sdf...
     """
+
     def __init__(self, channel_ids, key_origin="data", key_target="seg", remove_from_origin=True):
         self.remove_from_origin = remove_from_origin
         self.key_target = key_target
@@ -136,13 +144,14 @@ class MoveLastFewDataToSeg_pbl(AbstractTransform):
         self.channel_ids = channel_ids
 
         assert isinstance(self.channel_ids, list), self.channel_ids
+
     def __call__(self, **data_dict):
         origin = data_dict.get(self.key_origin)
         target = data_dict.get(self.key_target)
 
-        if np.all(np.array(self.channel_ids)<0):
-            self.channel_ids = [i+origin.shape[1] for i in self.channel_ids]
-        assert not (np.any(np.array(self.channel_ids)>=0) and np.any(np.array(self.channel_ids)<0))
+        if np.all(np.array(self.channel_ids) < 0):
+            self.channel_ids = [i + origin.shape[1] for i in self.channel_ids]
+        assert not (np.any(np.array(self.channel_ids) >= 0) and np.any(np.array(self.channel_ids) < 0))
 
         data_o = origin[:, self.channel_ids]
         target = np.concatenate((target, data_o), 1)
@@ -154,6 +163,3 @@ class MoveLastFewDataToSeg_pbl(AbstractTransform):
             data_dict[self.key_origin] = origin
 
         return data_dict
-
-
-
