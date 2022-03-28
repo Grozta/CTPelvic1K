@@ -39,9 +39,19 @@ def get_reasonable_crops_of_lumbar(gt3d, patch_size, stage):
                     (int(w // 2 - c_s), int(w // 2 + c_s))]
 
     if upside_down:
-        lambar_boundary_d = sorted(set(d_lambar))[-5] + 4
+        # lambar_boundary_d = sorted(set(d_lambar))[-5] + 4
+        temp = sorted(set(d_lambar))
+        if len(temp) >= 5:
+            lambar_boundary_d = temp[-5] + 4
+        else:
+            lambar_boundary_d = temp[0] + 4
     else:
-        lambar_boundary_d = sorted(set(d_lambar))[4] - 4
+        # lambar_boundary_d = sorted(set(d_lambar))[4] - 4
+        temp = sorted(set(d_lambar))
+        if len(temp) >= 5:
+            lambar_boundary_d = temp[4] - 4
+        else:
+            lambar_boundary_d = temp[-1] - 4
 
     h_lambar = np.argwhere(lambar > 0)[:, 1]
     w_lambar = np.argwhere(lambar > 0)[:, 2]
@@ -62,20 +72,20 @@ def get_reasonable_crops_of_lumbar(gt3d, patch_size, stage):
 def _main_3d_one_case(name, path, crop_size, stage, img_save_path):
     print(name)
     try:
-        array = np.load(path + '/' + name + '.npy')
+        array = np.load(os.path.join(path, name + '.npy'))
     except Exception as _:
-        array = np.load(path + '/' + name + '.npz')['data']
+        array = np.load(os.path.join(path, name + '.npz'))['data']
 
-    with open(path + '/' + name + '.pkl', 'rb') as f:
+    with open(os.path.join(path, name + '.pkl'), 'rb') as f:
         info = pkl.load(f)
 
     reasonal = get_reasonable_crops_of_lumbar(array[-1, :, :, :], patch_size=crop_size, stage=stage)
     info['Lumbosacral_Region'] = reasonal
 
     # backup raw pkl file
-    os.rename(path + '/' + name + '.pkl', path + '/' + name + '_backup.pkl')
+    os.rename(os.path.join(path, name + '.pkl'), os.path.join(path, name + '_backup.pkl'))
     # save new pkl file
-    with open(path + '/' + name + '.pkl', 'wb') as f:
+    with open(os.path.join(path, name + '.pkl'), 'wb') as f:
         pkl.dump(info, f)
     print(reasonal)
 
@@ -83,7 +93,7 @@ def _main_3d_one_case(name, path, crop_size, stage, img_save_path):
     saveimg = array[0][(reasonal[0][0] + reasonal[0][1]) // 2, reasonal[1][0]:reasonal[1][1],
               reasonal[2][0]:reasonal[2][1]]
     saveimg = (saveimg - saveimg.min()) / (saveimg.max() - saveimg.min()) * 255
-    cv2.imwrite(img_save_path + '/' + name + '.png', saveimg)
+    cv2.imwrite(os.path.join(img_save_path, name + '.png'), saveimg)
 
 
 def main_3d(base_path, check_save_path):

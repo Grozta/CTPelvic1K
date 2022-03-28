@@ -250,7 +250,7 @@ class nnUNetTrainer(NetworkTrainer):
         self.data_aug_params['move_last_few_data_chanels_to_data'] = False
         self.data_aug_params['last_few_data_channels'] = [-1]
 
-    def initialize(self, training=True, force_load_plans=False, use_hdc=False):
+    def initialize(self, training=True, force_load_plans=False, use_hdc=True):
         """
         For prediction of test cases just set training=False,
         this will prevent loading of training data and

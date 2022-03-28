@@ -11,19 +11,19 @@ from nnunet.paths import my_output_identifier
 # TASK = 'Task11_CTPelvic1K'
 TASK = 'Task5_CERVIX'
 # TASK = 'Task12_CTPelvic1K'
-home_dir = '/media/peng/F/CTPelvic1K'
+home_dir = '/data/datasets/CTPelvic1K'
 # train_dir = os.path.join(home_dir, f'all_data/nnUNet/rawdata/{TASK}')
 output_dir = os.path.join(home_dir, f'all_data/nnUNet/nnUNet_raw/{TASK}')
-train_dir = '/media/peng/F/CTPelvic1K/folds/fold5/train_val'
+train_dir = '/data/datasets/CTPelvic1K/folds/fold5/train_val'
 
 # train_dir = os.path.join(home_dir, 'all_data/nnUNet/rawdata/Task11_CTPelvic1K')
 # output_dir = os.path.join(home_dir, 'all_data/nnUNet/nnUNet_raw/Task11_CTPelvic1K')
 # command = f'python dataset_conversion/JstPelvisSegmentation_5label.py --train_dir "{train_dir}" --output_dir "{output_dir}"'
 # command = f'python experiment_planning/plan_and_preprocess_task.py -t {TASK} -pl 15 -pf 15'
 
-processed_path = os.path.join(home_dir, f'all_data/nnUNet/nnUNet_processed/Task11_CTPelvic1K')
-check_save_path = os.path.join(home_dir, f'all_data/nnUNet/nnUNet_processed/Task11_CTPelvic1K/Task11_check')
-# command = f'python preprocessing/lumbosacral_joint_sampling.py --processed_path "{processed_path}" --check_save_path "{check_save_path}"'
+processed_path = os.path.join(home_dir, f'all_data/nnUNet/nnUNet_processed/{TASK}')
+check_save_path = os.path.join(home_dir, f'all_data/nnUNet/nnUNet_processed/{TASK}/Task5_check')
+command = f'python preprocessing/lumbosacral_joint_sampling.py --processed_path "{processed_path}" --check_save_path "{check_save_path}"'
 
 
 ########################################################################################################################
@@ -32,7 +32,7 @@ check_save_path = os.path.join(home_dir, f'all_data/nnUNet/nnUNet_processed/Task
 # TASK = 'Task11_CTPelvic1K'
 # TASK = 'Task22_ipcai2021'
 FOLD = 5
-GPU = "0,1"
+GPU = "0"
 """
     Training
 """
@@ -89,18 +89,18 @@ test_data_path = '/media/peng/F/CTPelvic1K/folds/fold5/test/img'
 #           f'--gpu "{GPU}" ' \
 #           f'--overwrite_existing 0 '
 
-my_task_lowres = TASK
-my_output_identifier_lowres = 'CTPelvic1K' #your low_res experiment\'s "my_output_identifier" in path
-command = f'python inference/predict_simple.py ' \
-          f'-i "{test_data_path}" ' \
-          f'-o "{test_data_path}/{TASK}__{my_output_identifier_lowres}__{my_output_identifier}__fold{FOLD}_3dcascadefullres_pred" ' \
-          f'-t "{TASK}" ' \
-          f'-tr nnUNetTrainerCascadeFullRes ' \
-          f'-m 3d_cascade_fullres ' \
-          f'-f {FOLD} ' \
-          f'-l "{test_data_path}/{my_task_lowres}__{my_output_identifier_lowres}__fold{FOLD}_3dlowres_pred" ' \
-          f'--gpu "{GPU}" ' \
-          f'--overwrite_existing 0 '
+# my_task_lowres = TASK
+# my_output_identifier_lowres = 'CTPelvic1K' #your low_res experiment\'s "my_output_identifier" in path
+# command = f'python inference/predict_simple.py ' \
+#           f'-i "{test_data_path}" ' \
+#           f'-o "{test_data_path}/{TASK}__{my_output_identifier_lowres}__{my_output_identifier}__fold{FOLD}_3dcascadefullres_pred" ' \
+#           f'-t "{TASK}" ' \
+#           f'-tr nnUNetTrainerCascadeFullRes ' \
+#           f'-m 3d_cascade_fullres ' \
+#           f'-f {FOLD} ' \
+#           f'-l "{test_data_path}/{my_task_lowres}__{my_output_identifier_lowres}__fold{FOLD}_3dlowres_pred" ' \
+#           f'--gpu "{GPU}" ' \
+#           f'--overwrite_existing 0 '
 
 ########################################################################################################################
 #                                              evaluation                                                              #
