@@ -166,12 +166,14 @@ def computeQualityMeasures_oneModel(pred_path, target_path_file, subdataset, pos
     """
     Come on!!!!!!
     """
-    pool = Pool(thread)
-    func = partial(computeQualityMeasures_oneCases, pred_path=pred_path, target_path_file=target_path_file,
-                   postprocessor=postprocessor, region_th=region_th, sdf_th=sdf_th)
-    results = pool.map(func, names)
-    pool.close()
-    pool.join()
+
+    with Pool(thread) as pool:
+        # pool = Pool(thread)
+        func = partial(computeQualityMeasures_oneCases, pred_path=pred_path, target_path_file=target_path_file,
+                       postprocessor=postprocessor, region_th=region_th, sdf_th=sdf_th)
+        results = pool.map(func, names)
+        # pool.close()
+        # pool.join()
 
     di = OrderedDict()
     idx = 0

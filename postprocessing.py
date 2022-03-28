@@ -167,8 +167,9 @@ if __name__ == '__main__':
     print(len(files))
     files = sorted(files)
 
-    pool = Pool(16)
-    fu = partial(func, path=pred_path, savepath=save_path)
-    _ = pool.map(fu, files)
-    pool.close()
-    pool.join()
+    with Pool(16) as pool:
+        # pool = Pool(16)
+        fu = partial(func, path=pred_path, savepath=save_path)
+        _ = pool.map(fu, files)
+        # pool.close()
+        # pool.join()

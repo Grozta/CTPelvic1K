@@ -80,10 +80,11 @@ if __name__ == "__main__":
             out_files.append(join(output_folder, p[:-4] + ".nii.gz"))
             gt_segmentations.append(join(folder_with_gt_segs, p[:-4] + ".nii.gz"))
 
-    p = Pool(8)
-    p.map(merge, zip(files1, files2, property_files, out_files))
-    p.close()
-    p.join()
+    with Pool(8) as p:
+        # p = Pool(8)
+        p.map(merge, zip(files1, files2, property_files, out_files))
+        # p.close()
+        # p.join()
 
     """for args in zip(files1, files2, property_files, out_files, [only_keep_largest_connected_component] * len(files1)):
         print(args[0], args[1])

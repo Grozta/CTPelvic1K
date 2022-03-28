@@ -41,11 +41,12 @@ def split_4d(task_string):
 
     shutil.copytree(join(base_folder, "labelsTr"), join(output_folder, "labelsTr"))
 
-    p = Pool(8)
-    p.starmap(split_4d_nifti, zip(files, output_dirs))
-    p.close()
-    p.join()
-    shutil.copy(join(base_folder, "dataset.json"), output_folder)
+    with Pool(8) as p:
+        # p = Pool(8)
+        p.starmap(split_4d_nifti, zip(files, output_dirs))
+        # p.close()
+        # p.join()
+        shutil.copy(join(base_folder, "dataset.json"), output_folder)
 
 
 def create_lists_from_splitted_dataset(base_folder_splitted):
@@ -137,23 +138,24 @@ def plan_and_preprocess(task_string, processes_lowres=8, processes_fullres=3, no
     print('end ExperimentPlanner2D')
 
     if not no_preprocessing:
-        p = Pool(processes_lowres)
+        with Pool(processes_lowres) as p:
+            # p = Pool(processes_lowres)
 
-        stages = [i for i in subdirs(preprocessing_output_dir_this_task_train, join=True, sort=True)
-                  if i.split("/")[-1].find("stage") != -1]
-        for s in stages:
-            print(s.split("/")[-1])
-            list_of_npz_files = subfiles(s, True, None, ".npz", True)
-            list_of_pkl_files = [i[:-4] + ".pkl" for i in list_of_npz_files]
-            all_classes = []
-            for pk in list_of_pkl_files:
-                with open(pk, 'rb') as f:
-                    props = pickle.load(f)
-                all_classes_tmp = np.array(props['classes'])
-                all_classes.append(all_classes_tmp[all_classes_tmp >= 0])
-            p.map(add_classes_in_slice_info, zip(list_of_npz_files, list_of_pkl_files, all_classes))
-        p.close()
-        p.join()
+            stages = [i for i in subdirs(preprocessing_output_dir_this_task_train, join=True, sort=True)
+                      if i.split("/")[-1].find("stage") != -1]
+            for s in stages:
+                print(s.split("/")[-1])
+                list_of_npz_files = subfiles(s, True, None, ".npz", True)
+                list_of_pkl_files = [i[:-4] + ".pkl" for i in list_of_npz_files]
+                all_classes = []
+                for pk in list_of_pkl_files:
+                    with open(pk, 'rb') as f:
+                        props = pickle.load(f)
+                    all_classes_tmp = np.array(props['classes'])
+                    all_classes.append(all_classes_tmp[all_classes_tmp >= 0])
+                p.map(add_classes_in_slice_info, zip(list_of_npz_files, list_of_pkl_files, all_classes))
+            # p.close()
+            # p.join()
 
 
 if __name__ == "__main__":

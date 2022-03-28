@@ -42,11 +42,12 @@ def merge(folders, output_folder, threads, override=True):
 
     only_keep_largest_connected_component, min_region_size_per_class = plans['keep_only_largest_region'], \
                                                                        plans['min_region_size_per_class']
-    p = Pool(threads)
-    p.map(merge_files, zip(files, property_files, out_files, [only_keep_largest_connected_component] * len(out_files),
-                           [min_region_size_per_class] * len(out_files), [override] * len(out_files)))
-    p.close()
-    p.join()
+    with Pool(threads) as p:
+        # p = Pool(threads)
+        p.map(merge_files, zip(files, property_files, out_files, [only_keep_largest_connected_component] * len(out_files),
+                               [min_region_size_per_class] * len(out_files), [override] * len(out_files)))
+        # p.close()
+        # p.join()
 
 
 if __name__ == "__main__":

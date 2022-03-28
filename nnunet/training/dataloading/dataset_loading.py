@@ -123,11 +123,12 @@ def unpack_dataset(folder, threads=48, key="data"):
 
 
 def pack_dataset(folder, threads=8, key="data"):
-    p = Pool(threads)
-    npy_files = subfiles(folder, True, None, ".npy", True)
-    p.map(save_as_npz, zip(npy_files, [key] * len(npy_files)))
-    p.close()
-    p.join()
+    with Pool(threads) as p:
+        # p = Pool(threads)
+        npy_files = subfiles(folder, True, None, ".npy", True)
+        p.map(save_as_npz, zip(npy_files, [key] * len(npy_files)))
+        # p.close()
+        # p.join()
 
 
 def delete_npy(folder):

@@ -110,11 +110,12 @@ def main_3d(base_path, check_save_path):
     if not os.path.exists(img_save_path):
         os.makedirs(img_save_path)
 
-    pool = Pool()
-    func = partial(_main_3d_one_case, path=path, crop_size=crop_size, stage=stage, img_save_path=img_save_path)
-    _ = pool.map(func, names)
-    pool.close()
-    pool.join()
+    with Pool() as pool:
+        # pool = Pool()
+        func = partial(_main_3d_one_case, path=path, crop_size=crop_size, stage=stage, img_save_path=img_save_path)
+        _ = pool.map(func, names)
+        # pool.close()
+        # pool.join()
 
 
 if __name__ == '__main__':

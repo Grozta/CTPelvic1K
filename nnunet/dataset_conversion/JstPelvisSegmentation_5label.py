@@ -92,11 +92,12 @@ if __name__ == "__main__":
 
     nii_files_ts = subfiles(test_dir, True, None, "_data.nii.gz", True)
 
-    p = Pool(16)
-    train_ids = p.map(load_save_train, zip(nii_files_tr_data, nii_files_tr_seg))
-    test_ids = p.map(load_save_test, nii_files_ts)
-    p.close()
-    p.join()
+    with Pool(16) as p:
+        # p = Pool(16)
+        train_ids = p.map(load_save_train, zip(nii_files_tr_data, nii_files_tr_seg))
+        test_ids = p.map(load_save_test, nii_files_ts)
+        # p.close()
+        # p.join()
 
     json_dict = OrderedDict()
     json_dict['name'] = "CTPelvic1K_4label"
