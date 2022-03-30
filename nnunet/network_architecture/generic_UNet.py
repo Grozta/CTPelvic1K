@@ -6,10 +6,10 @@ import numpy as np
 from nnunet.network_architecture.initialization import InitWeights_He
 from nnunet.network_architecture.neural_network import SegmentationNetwork
 import torch.nn.functional
-from nnunet.network_architecture.HDC_Net import HDC_Net
+# from nnunet.network_architecture.HDC_Net import HDC_Net
 
-HDC_model = HDC_Net(1, 5, num_filters=8)
-HDC_model = torch.nn.DataParallel(HDC_model).cuda()
+# HDC_model = HDC_Net(1, 4, num_filters=8)
+# HDC_model = torch.nn.DataParallel(HDC_model).cuda()
 
 
 class ConvDropoutNormNonlin(nn.Module):

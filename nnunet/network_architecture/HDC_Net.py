@@ -831,7 +831,7 @@ class HDC_Net(nn.Module):
         x = self.conv_6(x)
         x = self.upsample(x)
         x = self.out(x)
-        x = self.softmax(x)
+        # x = self.softmax(x)
         # print(np.unique(torch.argmax(x, dim=1).cpu().numpy()))
 
         return x

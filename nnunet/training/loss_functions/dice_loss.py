@@ -267,13 +267,13 @@ class DC_and_CE_Exclusion_loss_DeepS(nn.Module):
         else:
             raise NotImplementedError("nah son")
 
-        if self.ex_choice:
-            target_onehots = [_convert_target2onehot(net_output, target.long()) for net_output, target in
-                              zip(net_outputs, targets)]
-            not_gts = [reverse_gt(target_onehot) for target_onehot in target_onehots]
-            ex_loss = self.ex(net_outputs, not_gts)
-
-            result = result + self.rate * ex_loss
+        # if self.ex_choice:
+        #     target_onehots = [_convert_target2onehot(net_output, target.long()) for net_output, target in
+        #                       zip(net_outputs, targets)]
+        #     not_gts = [reverse_gt(target_onehot) for target_onehot in target_onehots]
+        #     ex_loss = self.ex(net_outputs, not_gts)
+        #
+        #     result = result + self.rate * ex_loss
         return result
 
 

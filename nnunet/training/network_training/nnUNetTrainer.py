@@ -321,7 +321,7 @@ class nnUNetTrainer(NetworkTrainer):
         net_nonlin_kwargs = {'negative_slope': 1e-2, 'inplace': True}
 
         if use_hdc:
-            self.network = HDC_Net(1, 5, num_filters=8)
+            self.network = HDC_Net(1, 5, num_filters=16)
             self.network.cuda()
             self.network.conv_op = conv_op
             self.network.num_classes = self.num_classes
