@@ -141,7 +141,7 @@ class HDC_Net(nn.Module):
         self.n_f = num_filters
         self.activation = nn.ReLU(inplace=False)
         # down
-        self.conv_3x3x3 = Conv_3x3x3(self.n_f, self.n_f, self.activation)
+        self.conv_3x3x3 = Conv_3x3x3(8, self.n_f, self.activation)
         self.conv_1 = HDC_module(self.n_f, self.n_f, self.activation)
         self.down_1 = Conv_down(self.n_f, self.n_f, self.activation)
         self.conv_2 = HDC_module(self.n_f, self.n_f, self.activation)
@@ -835,6 +835,13 @@ class HDC_Net(nn.Module):
         # print(np.unique(torch.argmax(x, dim=1).cpu().numpy()))
 
         return x
+
+
+def count_param(model):
+    param_count = 0
+    for param in model.parameters():
+        param_count += param.view(-1).size()[0]
+    return param_count
 
 
 if __name__ == "__main__":
