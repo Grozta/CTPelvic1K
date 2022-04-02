@@ -9,7 +9,7 @@ if __name__ == '__main__':
     #                                    'Task22_ipcai2021_T__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__fold0_3dcascadefullres_pred/' \
     #                                    'evaluation_mcr__2000_False.pkl'
     # eval_reslult_pkl_path = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_2d_pred/evaluation_sdf_35__2000.pkl'
-    eval_reslult_pkl_path = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred_out/evaluation_sdf_35__2000.pkl'
+    eval_reslult_pkl_path = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred_hdc16/cut_spine/evaluation_sdf_35__2000.pkl'
     print(eval_reslult_pkl_path)
     with open(eval_reslult_pkl_path, 'rb') as f:
         eval_reslult = pkl.load(f)  # dict of names and quality sub-dict
@@ -63,6 +63,8 @@ if __name__ == '__main__':
             weight_Hausdorff.append(quality['weighted_mean_hausdorff'])
             weight_Dice.append(quality['weighted_mean_dice'])
             weight_Acc.append(quality['weighted_mean_acc'])
+        if 0 == len(names):
+            continue
         print(dataset, len(names))
         print(
             'bone1_Dice:', np.array(bone1_Dice).mean(), '\n',
@@ -109,27 +111,50 @@ if __name__ == '__main__':
         assert len(names) == len(weight_Hausdorff)
         assert len(names) == len(weight_Acc)
 
+        # results = {'names': names,
+        #            'bone1_Dice': bone1_Dice,
+        #            'bone1_Hausdorff': bone1_Hausdorff,
+        #            'bone1_Acc': bone1_Acc,
+        #            'bone2_Dice': bone2_Dice,
+        #            'bone2_Hausdorff': bone2_Hausdorff,
+        #            'bone2_Acc': bone2_Acc,
+        #            'bone3_Dice': bone3_Dice,
+        #            'bone3_Hausdorff': bone3_Hausdorff,
+        #            'bone3_Acc': bone3_Acc,
+        #            'bone4_Dice': bone4_Dice,
+        #            'bone4_Hausdorff': bone4_Hausdorff,
+        #            'bone4_Acc': bone4_Acc,
+        #            'whole_Dice': whole_Dice,
+        #            'whole_Hausdorff': whole_Hausdorff,
+        #            'whole_Acc': whole_Acc,
+        #            'mean_Dice': mean_Dice,
+        #            'mean_Hausdorff': mean_Hausdorff,
+        #            'mean_Acc': mean_Acc,
+        #            'weight_Dice': weight_Dice,
+        #            'weight_Hausdorff': weight_Hausdorff,
+        #            'weight_Acc': weight_Acc
+        #            }
         results = {'names': names,
-                   'bone1_Dice': bone1_Dice,
-                   'bone1_Hausdorff': bone1_Hausdorff,
-                   'bone1_Acc': bone1_Acc,
-                   'bone2_Dice': bone2_Dice,
-                   'bone2_Hausdorff': bone2_Hausdorff,
-                   'bone2_Acc': bone2_Acc,
-                   'bone3_Dice': bone3_Dice,
-                   'bone3_Hausdorff': bone3_Hausdorff,
-                   'bone3_Acc': bone3_Acc,
-                   'bone4_Dice': bone4_Dice,
-                   'bone4_Hausdorff': bone4_Hausdorff,
-                   'bone4_Acc': bone4_Acc,
-                   'whole_Dice': whole_Dice,
-                   'whole_Hausdorff': whole_Hausdorff,
+                   'Sacrum_DC': bone1_Dice,
+                   'Sacrum_HD': bone1_Hausdorff,
+                   'Sacrum_Acc': bone1_Acc,
+                   'Right hip_DC': bone2_Dice,
+                   'Right hip_HD': bone2_Hausdorff,
+                   'Right hip_Acc': bone2_Acc,
+                   'Left hip_DC': bone3_Dice,
+                   'Left hip_HD': bone3_Hausdorff,
+                   'Left hip_Acc': bone3_Acc,
+                   'Lumbar spine_DC': bone4_Dice,
+                   'Lumbar spine_HD': bone4_Hausdorff,
+                   'Lumbar spine_Acc': bone4_Acc,
+                   'whole_DC': whole_Dice,
+                   'whole_HD': whole_Hausdorff,
                    'whole_Acc': whole_Acc,
-                   'mean_Dice': mean_Dice,
-                   'mean_Hausdorff': mean_Hausdorff,
+                   'mean_DC': mean_Dice,
+                   'mean_HD': mean_Hausdorff,
                    'mean_Acc': mean_Acc,
-                   'weight_Dice': weight_Dice,
-                   'weight_Hausdorff': weight_Hausdorff,
+                   'weight_DC': weight_Dice,
+                   'weight_HD': weight_Hausdorff,
                    'weight_Acc': weight_Acc
                    }
         results_pd = pd.DataFrame(results)

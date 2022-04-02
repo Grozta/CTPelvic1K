@@ -47,11 +47,12 @@ def computeQualityMeasures(lP, lT):
         return quality
 
 
-def computeQualityMeasures_oneCases(name, pred_path, target_path_file, postprocessor, region_th=2000, sdf_th=0.4):
+def computeQualityMeasures_oneCases(name, pred_path, target_path_file, postprocessor, region_th=2000, sdf_th=0.4,
+                                    save_postprocess=True):
     """
     need modified to suited format
     """
-    _, pred, _ = _sitk_Image_reader(os.path.join(pred_path, name + '.nii.gz'))
+    _, pred, meta = _sitk_Image_reader(os.path.join(pred_path, name + '.nii.gz'))
     _, target, _ = _sitk_Image_reader(os.path.join(target_path_file, name + '_mask_4label.nii.gz'))
     print("computing {} ...".format(name), np.unique(target))
     # write2singlefile("computing {} ...".format(name)+ str(np.unique(target))+'\n', LOG_save_path)
@@ -68,6 +69,11 @@ def computeQualityMeasures_oneCases(name, pred_path, target_path_file, postproce
         pass
     else:
         raise NotImplementedError
+    # 保存后处理后的图片
+    if save_postprocess and postprocessor is not None:
+        postprocessor_dir = os.path.join(pred_path, postprocessor)
+        os.makedirs(postprocessor_dir, exist_ok=True)
+        _sitk_image_writer(pred, meta, os.path.join(postprocessor_dir, name + '.nii.gz'))
 
     one_case_qualities = OrderedDict()
 
@@ -261,7 +267,7 @@ if __name__ == '__main__':
     t_begin = time.time()
     # predbasePath = os.path.join(os.environ['HOME'], 'all_data/nnUNet/rawdata/ipcai2021_ALL_Test/')
     # predbasePath = '/media/peng/F/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred'
-    predbasePath = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred'
+    predbasePath = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred_hdc16/cut_spine'
     # tarPath = os.path.join(os.environ['HOME'], 'all_data/nnUNet/rawdata/ipcai2021/')
     tarPath = '/data/test/CTPelvic1K/folds/fold5/test/label'
 
