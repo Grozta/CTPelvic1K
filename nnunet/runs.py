@@ -9,7 +9,8 @@ from nnunet.paths import my_output_identifier
 ########################################################################################################################
 # home_dir = os.environ['HOME']
 # TASK = 'Task11_CTPelvic1K'
-TASK = 'Task5_CERVIX'
+# TASK = 'Task5_CERVIX'
+TASK = 'Task6_CERVIX'
 # TASK = 'Task12_CTPelvic1K'
 home_dir = '/data/datasets/CTPelvic1K'
 # train_dir = os.path.join(home_dir, f'all_data/nnUNet/rawdata/{TASK}')
@@ -23,7 +24,7 @@ train_dir = '/data/datasets/CTPelvic1K/folds/fold5/train_val'
 
 processed_path = os.path.join(home_dir, f'all_data/nnUNet/nnUNet_processed/{TASK}')
 check_save_path = os.path.join(home_dir, f'all_data/nnUNet/nnUNet_processed/{TASK}/Task5_check')
-command = f'python preprocessing/lumbosacral_joint_sampling.py --processed_path "{processed_path}" --check_save_path "{check_save_path}"'
+# command = f'python preprocessing/lumbosacral_joint_sampling.py --processed_path "{processed_path}" --check_save_path "{check_save_path}"'
 
 
 ########################################################################################################################
@@ -37,7 +38,7 @@ GPU = "0"
     Training
 """
 # command = f'python run/run_training.py 2d nnUNetTrainer "{TASK}" {FOLD} --gpu "{GPU}"' # TASK fold gpu_idx
-# command = f'python run/run_training.py 3d_fullres nnUNetTrainer "{TASK}" {FOLD} --gpu "{GPU}"'
+command = f'python run/run_training.py 3d_fullres nnUNetTrainer "{TASK}" {FOLD} --gpu "{GPU}"'
 # command = f'python run/run_training.py 3d_lowres nnUNetTrainer "{TASK}" {FOLD} --gpu "{GPU}"'
 # command = f'python run/run_training.py 3d_cascade_fullres nnUNetTrainerCascadeFullRes "{TASK}" {FOLD} --gpu "{GPU}"'
 
@@ -56,7 +57,7 @@ GPU = "0"
 """
 # test_data_path = os.path.join(home_dir, 'all_data/nnUNet/rawdata/ipcai2021_ALL_Test')
 # test_data_path = os.path.join(home_dir, 'all_data/nnUNet/rawdata/Task11_CTPelvic1K_test')
-test_data_path = '/media/peng/F/CTPelvic1K/folds/fold5/test/img'
+test_data_path = '/data/datasets/CTPelvic1K/folds/fold5_without4/test/img'
 
 # command = f'python inference/predict_simple.py ' \
 #           f'-i "{test_data_path}" ' \

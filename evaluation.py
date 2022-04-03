@@ -42,6 +42,7 @@ def computeQualityMeasures(lP, lT):
         quality["avgHausdorff"] = 0
         quality["Hausdorff"] = 0
         quality["dice"] = 1
+        quality["acc"] = 0
         quality["pred_pixel_num"] = 0
         quality["target_pixel_num"] = 0
         return quality
