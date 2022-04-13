@@ -9,7 +9,7 @@ if __name__ == '__main__':
     #                                    'Task22_ipcai2021_T__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__nnUNet_without_mirror_IPCAI2021_deeps_exclusion__fold0_3dcascadefullres_pred/' \
     #                                    'evaluation_mcr__2000_False.pkl'
     # eval_reslult_pkl_path = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_2d_pred/evaluation_sdf_35__2000.pkl'
-    eval_reslult_pkl_path = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred_hdc16/cut_spine/evaluation_sdf_35__2000.pkl'
+    eval_reslult_pkl_path = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred_hdc32/cut_spine/evaluation_sdf_35__2000.pkl'
     print(eval_reslult_pkl_path)
     with open(eval_reslult_pkl_path, 'rb') as f:
         eval_reslult = pkl.load(f)  # dict of names and quality sub-dict

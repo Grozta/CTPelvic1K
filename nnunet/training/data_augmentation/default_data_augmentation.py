@@ -87,7 +87,7 @@ def get_patch_size(final_patch_size, rot_x, rot_y, rot_z, scale_range):
 
 
 def get_default_augmentation(dataloader_train, dataloader_val, patch_size, params=default_3D_augmentation_params,
-                             border_val_seg=-1, pin_memory=True, seeds_train=None, seeds_val=None):
+                             border_val_seg=-1, pin_memory=False, seeds_train=None, seeds_val=None):
     tr_transforms = []
 
     if params.get("selected_data_channels") is not None:

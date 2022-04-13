@@ -848,7 +848,8 @@ if __name__ == "__main__":
     # from thop import profile
     device = torch.device('cuda')
     image_size = 128
-    x = torch.rand((1, 1, 128, 128, 128), device=device)
+    # x = torch.rand((1, 1, 128, 128, 128), device=device)
+    x = torch.rand((1, 1, 64, 192, 160), device=device)
     print("x size: {}".format(x.size()))
     model = HDC_Net(in_dim=1, out_dim=4, num_filters=64).to(device)
     # flops, params = profile(model, inputs=(x,))

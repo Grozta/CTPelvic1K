@@ -109,13 +109,13 @@ class DatasetAnalyzer(object):
 
         if self.overwrite or not isfile(self.props_per_case_file):
             res = []
-            # for args in tqdm(zip(self.patient_identifiers, [all_classes] * len(self.patient_identifiers)),
-            #                  total=len(self.patient_identifiers)):
-            #     res.append(self._load_seg_analyze_classes(args))
-            with Pool(self.num_processes) as p:
-                res = list(tqdm(p.imap(self._load_seg_analyze_classes,
-                                       zip(self.patient_identifiers, [all_classes] * len(self.patient_identifiers))),
-                                total=len(self.patient_identifiers)))
+            for args in tqdm(zip(self.patient_identifiers, [all_classes] * len(self.patient_identifiers)),
+                             total=len(self.patient_identifiers)):
+                res.append(self._load_seg_analyze_classes(args))
+            # with Pool(self.num_processes) as p:
+            #     res = list(tqdm(p.imap(self._load_seg_analyze_classes,
+            #                            zip(self.patient_identifiers, [all_classes] * len(self.patient_identifiers))),
+            #                     total=len(self.patient_identifiers)))
 
             # p = Pool(self.num_processes)
             # res = p.map(self._load_seg_analyze_classes, zip(self.patient_identifiers, [all_classes] * len(

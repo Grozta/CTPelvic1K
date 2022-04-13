@@ -268,9 +268,9 @@ if __name__ == '__main__':
     t_begin = time.time()
     # predbasePath = os.path.join(os.environ['HOME'], 'all_data/nnUNet/rawdata/ipcai2021_ALL_Test/')
     # predbasePath = '/media/peng/F/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred'
-    predbasePath = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred_hdc16/cut_spine'
+    predbasePath = '/data/datasets/CTPelvic1K/folds/fold5/test/img/Task5_CERVIX__CTPelvic1K__fold5_3dfullres_pred_hdc32/cut_spine'
     # tarPath = os.path.join(os.environ['HOME'], 'all_data/nnUNet/rawdata/ipcai2021/')
-    tarPath = '/data/test/CTPelvic1K/folds/fold5/test/label'
+    tarPath = '/data/datasets/CTPelvic1K/folds/fold5/test/label'
 
     print(predbasePath)
     for fo in [0]:

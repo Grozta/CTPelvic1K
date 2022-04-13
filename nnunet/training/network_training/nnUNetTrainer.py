@@ -359,6 +359,7 @@ class nnUNetTrainer(NetworkTrainer):
                                             False, True,
                                             True)
 
+        # TODO 学习率
         self.optimizer = torch.optim.Adam(self.network.parameters(),
                                           self.initial_lr,
                                           weight_decay=self.weight_decay,
